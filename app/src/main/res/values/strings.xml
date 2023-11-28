@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">PadelPal</string>
+    <string name="web_client_id">911192236859-ut5h16meu0vhsi3qno2220e7jbi124qq.apps.googleusercontent.com</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
+    <string name="button">Button</string>
+    <string name="name">Name</string>
 </resources>
