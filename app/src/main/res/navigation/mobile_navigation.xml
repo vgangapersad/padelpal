@@ -3,23 +3,23 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/navigation_home">
+    app:startDestination="@+id/navigation_matches">
 
     <fragment
-        android:id="@+id/navigation_home"
-        android:name="edu.ap.padelpal.ui.home.HomeFragment"
+        android:id="@+id/navigation_matches"
+        android:name="edu.ap.padelpal.ui.matches.MatchesFragment"
         android:label="@string/title_home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_matches" />
 
     <fragment
-        android:id="@+id/navigation_dashboard"
-        android:name="edu.ap.padelpal.ui.dashboard.DashboardFragment"
+        android:id="@+id/navigation_clubs"
+        android:name="edu.ap.padelpal.ui.clubs.ClubsFragment"
         android:label="@string/title_dashboard"
-        tools:layout="@layout/fragment_dashboard" />
+        tools:layout="@layout/fragment_clubs" />
 
     <fragment
-        android:id="@+id/navigation_notifications"
-        android:name="edu.ap.padelpal.ui.notifications.NotificationsFragment"
+        android:id="@+id/navigation_profile"
+        android:name="edu.ap.padelpal.ui.profile.ProfileFragment"
         android:label="@string/title_notifications"
-        tools:layout="@layout/fragment_notifications" />
+        tools:layout="@layout/fragment_profile" />
 </navigation>
