@@ -18,7 +18,7 @@ import coil.compose.AsyncImage
 import edu.ap.padelpal.presentation.sign_in.UserData
 
 @Composable
-fun ProfileScreen(
+fun ProfilesScreen(
     userData: UserData?,
     onSignOut: () -> Unit
 ) {
@@ -54,14 +54,14 @@ fun ProfileScreen(
 }
 @Preview
 @Composable
-fun ProfileScreenPreview() {
+fun ProfilesScreenPreview() {
     val userData = UserData(
         userId = "1111111",
         username = "John Doe",
         profilePictureUrl = "https://example.com/profile.jpg" // Replace with a valid URL
     )
 
-    ProfileScreen(
+    ProfilesScreen(
         userData = userData,
         onSignOut = {}
     )
