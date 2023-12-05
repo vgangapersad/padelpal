@@ -1,129 +1,127 @@
 package edu.ap.padelpal.ui.profile
 
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
-import coil.compose.rememberImagePainter
-import com.bumptech.glide.request.RequestOptions
-import edu.ap.padelpal.R
+import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import edu.ap.padelpal.presentation.sign_in.UserData
+
 
 @Composable
-fun ProfileScreen() {
-    // ViewModel logic and data
-    val viewModel = ProfileViewModel()
-
-    // Compose UI for your Profile screen
-    Surface(
-        color = MaterialTheme.colorScheme.background,
-        modifier = Modifier.fillMaxSize()
+fun ProfileScreen(
+    userData: UserData?,
+    navController: NavController
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            Text(text = "Profile Screen", style = MaterialTheme.typography.headlineSmall)
 
-            // Display user information or other content based on the ViewModel state
-            LazyColumn {
-                items(viewModel.userData) { userItem ->
-                    // Compose UI for each item in the user data
-                    Text(text = userItem)
-                }
-            }
-
-            // Glide logic for circular profile image
-            Box(
-                modifier = Modifier
-                    .size(100.dp)
-                    .padding(16.dp)
-            ) {
-                Image(
-                    painter = rememberImagePainter(data = R.drawable.profile_img),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.primary, shape = MaterialTheme.shapes.small),
-                    contentScale = ContentScale.Crop
-                )
-            }
-
-            // Glide logic for blurred images
-            val imageModifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.primary)
-
+    Surface(
+        modifier = Modifier.padding(10.dp),
+    ) {
+        Column {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(
-                    painter = rememberImagePainter(data = R.drawable.padel_tournament),
-                    contentDescription = null,
-                    modifier = imageModifier,
-                    contentScale = ContentScale.Crop
-                )
+                if (userData?.profilePictureUrl != null) {
+                    AsyncImage(
+                        model = userData.profilePictureUrl,
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    if (userData?.username != null) {
+                            Text(
+                                text = userData.username,
+                                style = MaterialTheme.typography.headlineSmall
+                            )
 
-                Image(
-                    painter = rememberImagePainter(data = R.drawable.padel_tournament),
-                    contentDescription = null,
-                    modifier = imageModifier,
-                    contentScale = ContentScale.Crop
-                )
+                    }
+                    Text("Antwerpen - België")
+                }
+
+                IconButton(onClick = {
+                    navController.navigate("Settings")
+                }) {
+                    Icon(
+                        imageVector = Icons.Rounded.Settings,
+                        contentDescription = "settings",
+                    )
+                }
             }
-        }
-    }
-}
+            // Green bar section
+            Spacer(modifier = Modifier.height(5.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.primary)
+                    .padding(horizontal = 80.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "22",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyLarge,
 
-class ProfileViewModel {
-    // Define your ViewModel logic and data here
-    val userData = listOf("User1", "User2", "User3") // Replace with your actual data
-}
-
-class ProfileFragment : Fragment() {
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        // Use ComposeView to integrate Compose UI into the existing Fragment
-        return ComposeView(requireContext()).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-            setContent {
-                ProfileScreen()
+                        )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Matches",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "9",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "won",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         }
     }
