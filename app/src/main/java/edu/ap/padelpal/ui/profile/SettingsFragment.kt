@@ -75,33 +75,33 @@ fun SettingsContent(
         "Antwerpen",
         "Gent",
         "Brussel",
-        "Mechelen"
+        "Mechelen",
+        "Not set"
     )
     val bestHand = listOf(
         "Right-handed",
         "Left-handed",
-        "both hands"
+        "Both hands",
+        "Not set"
     )
     val courtPosition = listOf(
-        "Baseline",
-        "Net/Volleyer",
-        "All-Court",
-        "Defensive"
+        "Both sides",
+        "Backhand",
+        "Forehand",
+        "Not set"
     )
     val matchType = listOf(
-        "Singles",
-        "Doubles",
-        "Mixed doubles",
-        "Team competitions"
+        "Competitive",
+        "Friendly",
+        "Both",
+        "Not set"
     )
     val preferredTime = listOf(
         "Morning",
         "Afternoon",
         "Evening",
-        "Night",
-        "Weekdays",
-        "Weekends",
-        "Anytime"
+        "All day",
+        "Not set"
     )
 
     Column(
