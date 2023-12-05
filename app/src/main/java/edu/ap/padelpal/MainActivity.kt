@@ -44,7 +44,9 @@ import edu.ap.padelpal.presentation.profile.ProfilesScreen
 import edu.ap.padelpal.presentation.sign_in.GoogleAuthUIClient
 import edu.ap.padelpal.presentation.sign_in.SignInScreen
 import edu.ap.padelpal.presentation.sign_in.SignInViewModel
+import edu.ap.padelpal.ui.clubs.ClubsScreen
 import edu.ap.padelpal.ui.profile.ProfileScreen
+import edu.ap.padelpal.ui.profile.SettingsScreen
 import edu.ap.padelpal.ui.theme.PadelPalTheme
 import kotlinx.coroutines.launch
 
@@ -194,7 +196,13 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                             composable("Profile") {
-                                ProfileScreen()
+                                ProfileScreen(
+                                    userData = googleAuthUiClient.getSignedInUser(),
+                                    navController
+                                )
+                            }
+                            composable("Clubs") {
+                                ClubsScreen()
                             }
                             composable("profiles") {
                                 ProfilesScreen(
@@ -210,6 +218,12 @@ class MainActivity : ComponentActivity() {
                                             navController.popBackStack()
                                         }
                                     }
+                                )
+                            }
+                            composable("Settings") {
+                                SettingsScreen(
+                                    userData = googleAuthUiClient.getSignedInUser(),
+                                    navController
                                 )
                             }
                         }
