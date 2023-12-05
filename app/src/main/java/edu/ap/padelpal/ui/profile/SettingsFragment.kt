@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
@@ -29,7 +28,11 @@ import edu.ap.padelpal.presentation.sign_in.UserData
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(userData: UserData?, navController: NavController) {
+fun SettingsScreen(
+    userData: UserData?,
+    navController: NavController,
+    onSignOut: () -> Unit
+) {
     Scaffold(
         topBar = {
             SmallTopAppBar(
@@ -39,6 +42,14 @@ fun SettingsScreen(userData: UserData?, navController: NavController) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,
                             contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onSignOut) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.logout),
+                            contentDescription = "Logout"
                         )
                     }
                 }
@@ -52,6 +63,7 @@ fun SettingsScreen(userData: UserData?, navController: NavController) {
         }
     )
 }
+
 
 
 @Composable
@@ -220,7 +232,8 @@ fun Selection(
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
-            },            colors = TextFieldDefaults.textFieldColors(
+            },
+            colors = TextFieldDefaults.textFieldColors(
                 containerColor = Color.Transparent
             ),
         )

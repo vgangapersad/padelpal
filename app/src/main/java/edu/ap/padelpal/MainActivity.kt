@@ -223,7 +223,18 @@ class MainActivity : ComponentActivity() {
                             composable("Settings") {
                                 SettingsScreen(
                                     userData = googleAuthUiClient.getSignedInUser(),
-                                    navController
+                                    navController,
+                                    onSignOut = {
+                                        lifecycleScope.launch {
+                                            googleAuthUiClient.signOut()
+                                            Toast.makeText(
+                                                applicationContext,
+                                                "Signed out",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                            navController.popBackStack()
+                                        }
+                                    }
                                 )
                             }
                         }
