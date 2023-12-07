@@ -29,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -97,8 +96,8 @@ fun ProfileScreen(
                         }
 
                     }
-                    Text(text = "Antwerpen - België",
-                        color = MaterialTheme.colorScheme.secondary)
+                    Text(
+                        "Antwerpen - België", color = MaterialTheme.colorScheme.secondary)
                 }
 
                 IconButton(onClick = {
