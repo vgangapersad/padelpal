@@ -97,148 +97,185 @@ class MainActivity : ComponentActivity() {
                 var selectedItemIndex by rememberSaveable {
                     mutableStateOf(0)
                 }
-                Surface(
-                    color = MaterialTheme.colorScheme.background,
-                    modifier = Modifier.fillMaxSize()
-                )
-                {
-                    val navController = rememberNavController()
-                    Scaffold(
-                        bottomBar = {
-                            NavigationBar {
-                                items.forEachIndexed { index, item ->
-                                    NavigationBarItem(
-                                        selected = selectedItemIndex == index,
-                                        onClick = {
-                                            selectedItemIndex = index
-                                            navController.navigate(item.title)
-                                        },
-                                        label = {
-                                            Text(text = item.title)
-                                        },
-                                        alwaysShowLabel = true,
-                                        icon = {
-                                            BadgedBox(
-                                                badge = {
-                                                    if (item.badgeCount != null) {
-                                                        Badge {
-                                                            Text(text = item.badgeCount.toString())
+
+                val navController = rememberNavController()
+                val isUserSignedIn = googleAuthUiClient.getSignedInUser() != null
+                if (isUserSignedIn) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.background,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    {
+                        val navController = rememberNavController()
+                        Scaffold(
+                            bottomBar = {
+                                NavigationBar {
+                                    items.forEachIndexed { index, item ->
+                                        NavigationBarItem(
+                                            selected = selectedItemIndex == index,
+                                            onClick = {
+                                                selectedItemIndex = index
+                                                navController.navigate(item.title)
+                                            },
+                                            label = {
+                                                Text(text = item.title)
+                                            },
+                                            alwaysShowLabel = true,
+                                            icon = {
+                                                BadgedBox(
+                                                    badge = {
+                                                        if (item.badgeCount != null) {
+                                                            Badge {
+                                                                Text(text = item.badgeCount.toString())
+                                                            }
+                                                        } else if (item.hasNews) {
+                                                            Badge()
                                                         }
-                                                    } else if (item.hasNews) {
-                                                        Badge()
                                                     }
+                                                ) {
+                                                    Icon(
+                                                        imageVector = if (index == selectedItemIndex) {
+                                                            item.selectedIcon
+                                                        } else item.unselectedIcon,
+                                                        contentDescription = item.title
+                                                    )
                                                 }
-                                            ) {
-                                                Icon(
-                                                    imageVector = if (index == selectedItemIndex) {
-                                                        item.selectedIcon
-                                                    } else item.unselectedIcon,
-                                                    contentDescription = item.title
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        ) {
+                            NavHost(navController = navController, startDestination = "Profile") {
+                                composable("Profile") {
+                                    ProfileScreen(
+                                        userData = googleAuthUiClient.getSignedInUser(),
+                                        navController
+                                    )
+                                }
+                                composable("Sign_in") {
+                                    val viewModel = viewModel<SignInViewModel>()
+                                    val state by viewModel.state.collectAsStateWithLifecycle()
+
+                                    val launcher = rememberLauncherForActivityResult(
+                                        contract = ActivityResultContracts.StartIntentSenderForResult(),
+                                        onResult = { result ->
+                                            if (result.resultCode == RESULT_OK) {
+                                                lifecycleScope.launch {
+                                                    val signInResult =
+                                                        googleAuthUiClient.signInWithIntent(
+                                                            intent = result.data ?: return@launch
+                                                        )
+                                                    viewModel.onSignInResult(signInResult)
+                                                }
+                                            }
+                                        }
+                                    )
+
+                                    LaunchedEffect(key1 = state.isSignInSuccessful) {
+                                        if (state.isSignInSuccessful) {
+                                            Toast.makeText(
+                                                applicationContext,
+                                                "Sign in successful",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+
+                                            navController.navigate("Profile")
+                                            viewModel.resetState()
+                                        }
+                                    }
+
+                                    SignInScreen(
+                                        userData = googleAuthUiClient.getSignedInUser(),
+                                        state = state,
+                                        onSignInClick = {
+                                            lifecycleScope.launch {
+                                                val signInIntentSender = googleAuthUiClient.signIn()
+                                                launcher.launch(
+                                                    IntentSenderRequest.Builder(
+                                                        signInIntentSender ?: return@launch
+                                                    ).build()
                                                 )
+                                            }
+                                        }
+                                    )
+                                }
+                                composable("Clubs") {
+                                    ClubsScreen()
+                                }
+                                composable("Settings") {
+                                    SettingsScreen(
+                                        userData = googleAuthUiClient.getSignedInUser(),
+                                        navController,
+                                        onSignOut = {
+                                            lifecycleScope.launch {
+                                                googleAuthUiClient.signOut()
+                                                Toast.makeText(
+                                                    applicationContext,
+                                                    "Signed out",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                                                navController.popBackStack()
+                                                navController.navigate("sign_in")
                                             }
                                         }
                                     )
                                 }
                             }
                         }
-                    ) {
-                        NavHost(navController = navController, startDestination = "sign_in") {
-                            composable("sign_in") {
-                                val viewModel = viewModel<SignInViewModel>()
-                                val state by viewModel.state.collectAsStateWithLifecycle()
+                    }
+                } else {
+                    val viewModel = viewModel<SignInViewModel>()
+                    val state by viewModel.state.collectAsStateWithLifecycle()
 
-                                LaunchedEffect(key1 = Unit) {
-                                    if (googleAuthUiClient.getSignedInUser() != null) {
-                                        navController.navigate("profile")
-                                    }
+                    LaunchedEffect(key1 = Unit) {
+                        if (googleAuthUiClient.getSignedInUser() != null) {
+                            navController.navigate("Profile")
+                        }
+                    }
+
+                    val launcher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.StartIntentSenderForResult(),
+                        onResult = { result ->
+                            if (result.resultCode == RESULT_OK) {
+                                lifecycleScope.launch {
+                                    val signInResult =
+                                        googleAuthUiClient.signInWithIntent(
+                                            intent = result.data ?: return@launch
+                                        )
+                                    viewModel.onSignInResult(signInResult)
                                 }
-
-                                val launcher = rememberLauncherForActivityResult(
-                                    contract = ActivityResultContracts.StartIntentSenderForResult(),
-                                    onResult = { result ->
-                                        if (result.resultCode == RESULT_OK) {
-                                            lifecycleScope.launch {
-                                                val signInResult =
-                                                    googleAuthUiClient.signInWithIntent(
-                                                        intent = result.data ?: return@launch
-                                                    )
-                                                viewModel.onSignInResult(signInResult)
-                                            }
-                                        }
-                                    }
-                                )
-
-                                LaunchedEffect(key1 = state.isSignInSuccessful) {
-                                    if (state.isSignInSuccessful) {
-                                        Toast.makeText(
-                                            applicationContext,
-                                            "Sign in successful",
-                                            Toast.LENGTH_LONG
-                                        ).show()
-
-                                        navController.navigate("profiles")
-                                        viewModel.resetState()
-                                    }
-                                }
-
-                                SignInScreen(
-                                    state = state,
-                                    onSignInClick = {
-                                        lifecycleScope.launch {
-                                            val signInIntentSender = googleAuthUiClient.signIn()
-                                            launcher.launch(
-                                                IntentSenderRequest.Builder(
-                                                    signInIntentSender ?: return@launch
-                                                ).build()
-                                            )
-                                        }
-                                    }
-                                )
                             }
-                            composable("Profile") {
-                                ProfileScreen(
-                                    userData = googleAuthUiClient.getSignedInUser(),
-                                    navController
-                                )
-                            }
-                            composable("Clubs") {
-                                ClubsScreen()
-                            }
-                            composable("profiles") {
-                                ProfilesScreen(
-                                    userData = googleAuthUiClient.getSignedInUser(),
-                                    onSignOut = {
-                                        lifecycleScope.launch {
-                                            googleAuthUiClient.signOut()
-                                            Toast.makeText(
-                                                applicationContext,
-                                                "Signed out",
-                                                Toast.LENGTH_LONG
-                                            ).show()
-                                            navController.popBackStack()
-                                        }
-                                    }
-                                )
-                            }
-                            composable("Settings") {
-                                SettingsScreen(
-                                    userData = googleAuthUiClient.getSignedInUser(),
-                                    navController,
-                                    onSignOut = {
-                                        lifecycleScope.launch {
-                                            googleAuthUiClient.signOut()
-                                            Toast.makeText(
-                                                applicationContext,
-                                                "Signed out",
-                                                Toast.LENGTH_LONG
-                                            ).show()
-                                            navController.popBackStack()
-                                        }
-                                    }
+                        }
+                    )
+
+                    LaunchedEffect(key1 = state.isSignInSuccessful) {
+                        if (state.isSignInSuccessful) {
+                            Toast.makeText(
+                                applicationContext,
+                                "Sign in successful",
+                                Toast.LENGTH_LONG
+                            ).show()
+
+                            navController.navigate("Profile")
+                            viewModel.resetState()
+                        }
+                    }
+
+                    SignInScreen(
+                        userData = googleAuthUiClient.getSignedInUser(),
+                        state = state,
+                        onSignInClick = {
+                            lifecycleScope.launch {
+                                val signInIntentSender = googleAuthUiClient.signIn()
+                                launcher.launch(
+                                    IntentSenderRequest.Builder(
+                                        signInIntentSender ?: return@launch
+                                    ).build()
                                 )
                             }
                         }
-                    }
+                    )
                 }
             }
         }

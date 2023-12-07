@@ -20,6 +20,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,7 +34,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import edu.ap.padelpal.data.firestore.UserRepository
+import edu.ap.padelpal.models.User
 import edu.ap.padelpal.presentation.sign_in.UserData
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -37,6 +46,23 @@ fun ProfileScreen(
     navController: NavController
     ) {
 
+    val coroutineScope = rememberCoroutineScope()
+    val userRepository = UserRepository()
+
+    var user by remember(userData?.userId) {
+        mutableStateOf<User?>(null)
+    }
+
+    // Fetch the user data when the screen is created
+    LaunchedEffect(key1 = userData?.userId) {
+        if (userData != null) {
+            coroutineScope.launch {
+                val fetchedUser = userRepository.getUserFromFirestore(userData.userId)
+                // Update the user data using the remember variable
+                user = fetchedUser
+            }
+        }
+    }
     Surface(
         modifier = Modifier.padding(10.dp),
     ) {
@@ -62,13 +88,17 @@ fun ProfileScreen(
                     modifier = Modifier.weight(1f)
                 ) {
                     if (userData?.username != null) {
+                        user?.let {
                             Text(
-                                text = userData.username,
-                                style = MaterialTheme.typography.headlineSmall
+                                text = it.displayName,
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.onBackground,
                             )
+                        }
 
                     }
-                    Text("Antwerpen - België")
+                    Text(text = "Antwerpen - België",
+                        color = MaterialTheme.colorScheme.secondary)
                 }
 
                 IconButton(onClick = {
@@ -86,7 +116,7 @@ fun ProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.primary)
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
                     .padding(horizontal = 80.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -94,31 +124,53 @@ fun ProfileScreen(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "22",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyLarge,
+                    user?.let {
+                        Text(
+                            text = it.level.toString(),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            style = MaterialTheme.typography.bodyLarge,
 
-                        )
+                            )
+                    }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Matches",
-                        color = Color.White,
+                        text = "Level",
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "9",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                    user?.let {
+                        Text(
+                            text = it.matchesPlayed.toString(),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            style = MaterialTheme.typography.bodyLarge,
+
+                            )
+                    }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "won",
-                        color = Color.White,
+                        text = "Played",
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    user?.let {
+                        Text(
+                            text = it.matchesWon.toString(),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Wins",
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
