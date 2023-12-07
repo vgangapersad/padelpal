@@ -1,5 +1,7 @@
 package edu.ap.padelpal.ui.profile
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -18,12 +20,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import edu.ap.padelpal.R
+import edu.ap.padelpal.data.firestore.UserRepository
+import edu.ap.padelpal.models.CourtPositionPreference
+import edu.ap.padelpal.models.HandPreference
+import edu.ap.padelpal.models.LocationPreference
+import edu.ap.padelpal.models.MatchTypePreference
+import edu.ap.padelpal.models.Preferences
+import edu.ap.padelpal.models.TimePreference
+import edu.ap.padelpal.models.User
 import edu.ap.padelpal.presentation.sign_in.UserData
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,7 +48,7 @@ fun SettingsScreen(
     navController: NavController,
     onSignOut: () -> Unit
 ) {
-    Scaffold(
+   Scaffold(
         topBar = {
             SmallTopAppBar(
                 title = { Text("Settings") },
@@ -71,6 +86,18 @@ fun SettingsContent(
     modifier: Modifier = Modifier,
     userData: UserData?) {
 
+    var usernameState by remember { mutableStateOf(userData?.username ?: "") }
+    val coroutineScope = rememberCoroutineScope()
+    val userRepository = UserRepository()
+    // Fetch the display name from Firestore when the screen is created
+    LaunchedEffect(key1 = userData?.userId) {
+        if (userData != null) {
+            coroutineScope.launch {
+                val user = userRepository.getUserFromFirestore(userData.userId)
+                usernameState = user?.displayName ?: ""
+            }
+        }
+    }
     val locations = listOf(
         "Antwerpen",
         "Gent",
@@ -117,17 +144,14 @@ fun SettingsContent(
                 .verticalScroll(rememberScrollState())
         )
         {
-            if (userData?.username != null) {
-                var usernameState by remember { mutableStateOf(userData.username) }
                 OutlinedTextField(
                     value = usernameState,
                     onValueChange = {usernameState = it},
-                    label = { Text("Name") },
+                    label = { Text("Display Name") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 15.dp)
                 )
-            }
             Selection(
                 selectionData = locations,
                 selectionLabel = "Location",
@@ -160,10 +184,40 @@ fun SettingsContent(
             )
             Spacer(modifier = Modifier.height(80.dp))
         }
+        val context = LocalContext.current
+        Button(
+            onClick = {
+                // Save the display name to Firestore here
+                if (userData != null) {
+                    coroutineScope.launch {
+                        // Save the display name to Firestore here
+                        saveDisplayNameToFirestore(userData.userId, usernameState, context)
+
+                    }
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.End)
+                .padding(top = 16.dp)
+        ) {
+            Text("Save")
+        }
     }
 }
 
+// Function to save the display name to Firestore
+private suspend fun saveDisplayNameToFirestore(uid: String, displayName: String, context: Context) {
+    try {
+        val db = Firebase.firestore
+        val userDocument = db.collection("users").document(uid)
 
+        userDocument.update("displayName", displayName).await()
+        Toast.makeText(context, "Display Name Saved", Toast.LENGTH_SHORT).show()
+        // Handle success if needed
+    } catch (e: Exception) {
+        // Handle exception
+    }
+}
 
 @Composable
 fun ProfilePicture(userData: UserData?) {
