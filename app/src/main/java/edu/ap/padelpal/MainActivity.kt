@@ -197,7 +197,8 @@ class MainActivity : ComponentActivity() {
                                                     ).build()
                                                 )
                                             }
-                                        }
+                                        },
+                                        onSaveClubsClick =
                                     )
                                 }
                                 composable("Clubs") {
