@@ -2,6 +2,7 @@ package edu.ap.padelpal.ui.clubs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 
 
@@ -57,7 +59,7 @@ val clubs = listOf(
 )
 
 @Composable
-fun ClubsScreen() {
+fun ClubsScreen(navController: NavController) {
         var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
 
         Column {
@@ -71,20 +73,22 @@ fun ClubsScreen() {
                                         it.address.contains(searchQuery.text, ignoreCase = true)
                         }
                         items(filteredClubs) { club ->
-                                ClubItem(club)
+                                ClubItem(club = club, onClick = {
+                                        navController.navigate("ClubDetail/${club.id}")
+                                })
                         }
                 }
         }
 }
 @Composable
-fun ClubItem(club: Club) {
-
+fun ClubItem(club: Club, onClick: () -> Unit) {
         Card(
                 modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp)
+                        .clickable(onClick = onClick) // Voeg hier de clickable modifier toe
                         .border(0.5.dp, MaterialTheme.colorScheme.outline, shape = MaterialTheme.shapes.medium),
-                ) {
+        ){
 
                 Row(
                         modifier = Modifier

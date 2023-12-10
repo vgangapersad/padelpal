@@ -1,5 +1,6 @@
 package edu.ap.padelpal
 
+import ClubDetailScreen
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.Toast
@@ -36,11 +37,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.google.android.gms.auth.api.identity.Identity
-import edu.ap.padelpal.presentation.profile.ProfilesScreen
 import edu.ap.padelpal.presentation.sign_in.GoogleAuthUIClient
 import edu.ap.padelpal.presentation.sign_in.SignInScreen
 import edu.ap.padelpal.presentation.sign_in.SignInViewModel
@@ -201,8 +203,18 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 composable("Clubs") {
-                                    ClubsScreen()
+                                    ClubsScreen(navController)
                                 }
+                                composable(
+                                    route = "ClubDetail/{clubId}",
+                                    arguments = listOf(navArgument("clubId") { type = NavType.IntType })
+                                ) { backStackEntry ->
+                                    val clubId = backStackEntry.arguments?.getInt("clubId")
+                                    clubId?.let {
+                                        ClubDetailScreen(navController, clubId = it)
+                                    }
+                                }
+
                                 composable("Settings") {
                                     SettingsScreen(
                                         userData = googleAuthUiClient.getSignedInUser(),
