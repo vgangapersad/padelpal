@@ -11,16 +11,32 @@ class ClubRepository {
     val db = Firebase.firestore
     val collectionRef = db.collection("clubs")
 
-    suspend fun getAllClubs(): List<Club>{
+    suspend fun getAllClubs(): List<Club> {
         val clubs = mutableListOf<Club>()
         try {
             val querySnapshot = collectionRef.get().await()
-            for (doc in querySnapshot){
-                clubs.add(doc.toObject(Club::class.java))
+            for (doc in querySnapshot) {
+                val club = doc.toObject(Club::class.java)
+                // Set the auto-generated document ID as the 'id' property
+                club.id = doc.id
+                clubs.add(club)
             }
-        } catch (e: Exception){
+        } catch (e: Exception) {
             throw e
         }
         return clubs
+    }
+
+    suspend fun getClub(id: String): Club {
+        var club: Club
+        try {
+            val querySnapshot = collectionRef.document(id).get().await()
+                club = querySnapshot.toObject(Club::class.java)!!
+                // Set the auto-generated document ID as the 'id' property
+                club.id = querySnapshot.id
+            } catch (e: Exception) {
+            throw e
+        }
+        return club
     }
 }

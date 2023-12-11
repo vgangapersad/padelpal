@@ -1,6 +1,7 @@
 package edu.ap.padelpal.models
 
 data class Club(
+    var id: String = "", // PadelPal uses the auto-generated document ID from Firestore.
     val name: String = "",
     val location: Location = Location(),
     val imageUrl: String = "",
