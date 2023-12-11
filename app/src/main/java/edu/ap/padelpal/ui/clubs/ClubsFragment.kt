@@ -45,26 +45,6 @@ import edu.ap.padelpal.data.firestore.ClubRepository
 import edu.ap.padelpal.models.Club
 
 
-//data class Club(
-//        val id: Int,
-//        val name: String,
-//        val address: String,
-//        val image: String
-//)
-//
-//val clubs = listOf(
-//        Club(1, "Peak Performance Fitness", "123 Ascend Street", "gallery_icon"),
-//        Club(2, "Aquatic Quest Swim Center", "456 Wave Avenue", "gallery_icon"),
-//        Club(3, "Velocity Track Club", "789 Sprint Boulevard", "gallery_icon"),
-//        Club(4, "Summit Climbing Gym", "101 Boulder Road", "gallery_icon"),
-//        Club(5, "Iron Lifters Gym", "202 Muscle Lane", "gallery_icon"),
-//        Club(6, "Urban Cycle Hub", "303 Pedal Way", "gallery_icon"),
-//        Club(7, "Grand Slam Tennis Academy", "404 Serve Path", "gallery_icon"),
-//        Club(8, "Pinnacle Golf Range", "505 Fairway Trail", "gallery_icon"),
-//        Club(9, "Martial Arts Mastery Dojo", "606 Fist Alley", "gallery_icon"),
-//        Club(10, "Riverside Rowing Club", "707 Oar Plaza", "gallery_icon")
-//)
-
 @Composable
 fun ClubsScreen() {
         var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
@@ -128,8 +108,6 @@ fun ClubItem(club: Club) {
                         AsyncImage(
                                 model = club.imageUrl,
                                 contentDescription = club.name,
-//                                modifier = Modifier
-//                                        .size(88.dp),
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                         .height(88.dp)
