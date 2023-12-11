@@ -101,7 +101,7 @@ fun ClubItem(club: Club, onClick: () -> Unit) {
                         Column(
                                 modifier = Modifier
                                         .fillMaxWidth()
-                                        .weight(1f)
+                                               .weight(1f)
                                         .padding(start = 35.dp),
                                 verticalArrangement = Arrangement.Center
                         ) {
@@ -154,4 +154,5 @@ fun SearchBar(state: TextFieldValue, onValueChange: (TextFieldValue) -> Unit) {
                         .padding(8.dp)
         )
 }
+
 
