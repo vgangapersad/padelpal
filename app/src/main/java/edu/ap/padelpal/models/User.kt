@@ -7,7 +7,7 @@ data class User(
     val preferences: Preferences,
     val matchesWon: Int = 0,
     val matchesPlayed: Int = 0,
-    val level: Int =  1,
+    val level: Int = 1,
 )
 
 
