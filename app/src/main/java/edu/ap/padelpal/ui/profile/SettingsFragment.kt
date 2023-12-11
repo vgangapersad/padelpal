@@ -187,10 +187,8 @@ fun SettingsContent(
         val context = LocalContext.current
         Button(
             onClick = {
-                // Save the display name to Firestore here
                 if (userData != null) {
                     coroutineScope.launch {
-                        // Save the display name to Firestore here
                         saveDisplayNameToFirestore(userData.userId, usernameState, context)
 
                     }
