@@ -5,6 +5,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import edu.ap.padelpal.models.Club
+import edu.ap.padelpal.models.Location
+import edu.ap.padelpal.models.OpeningHours
 import edu.ap.padelpal.models.Preferences
 import edu.ap.padelpal.models.User
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,7 +44,6 @@ class SignInViewModel: ViewModel() {
             val documentSnapshot = documentRef.get().await()
             documentSnapshot.exists()
         } catch (e: Exception) {
-            // Handle exceptions if necessary
             false
         }
 

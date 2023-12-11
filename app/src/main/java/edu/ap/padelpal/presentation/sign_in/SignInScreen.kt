@@ -1,11 +1,14 @@
 package edu.ap.padelpal.presentation.sign_in
 
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.icu.number.NumberFormatter.UnitWidth
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -16,9 +19,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import edu.ap.padelpal.data.firestore.UserRepository
+import edu.ap.padelpal.models.Club
+import edu.ap.padelpal.models.Location
+import edu.ap.padelpal.models.OpeningHours
 import edu.ap.padelpal.models.Preferences
 import edu.ap.padelpal.models.User
 
@@ -26,7 +34,7 @@ import edu.ap.padelpal.models.User
 fun SignInScreen(
     userData: UserData?,
     state: SignInState,
-    onSignInClick: () -> Unit
+    onSignInClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val db = Firebase.firestore
@@ -50,6 +58,7 @@ fun SignInScreen(
         }) {
             Text(text = "Sign in")
         }
+        Spacer(modifier = Modifier.height(16.dp)) // Adjust the spacing as needed
     }
 }
 
