@@ -49,68 +49,6 @@ class SignInViewModel: ViewModel() {
 
     }
 
-    private fun generateRandomClub(): Club {
-        val random = java.util.Random()
-
-        val clubNames = listOf(
-            "Padel Pro Club",
-            "Urban Padel",
-            "Ace Padel Center",
-            "Epic Padel Zone",
-            "Green Court Padel",
-            "Top Spin Padel",
-            "Swift Padel Arena",
-            "Elite Padel Lounge",
-            "Dynamic Smash Club",
-            "Perfect Padel Haven"
-        )
-
-        val locations = listOf(
-            Location(51.2194, 4.4025, "Belgium", "Antwerp", "Antwerp Street 123"),
-            Location(50.8503, 4.3517, "Belgium", "Brussels", "Brussels Avenue 456"),
-            Location(51.0543, 3.7174, "Belgium", "Gent", "Gent Lane 789")
-        )
-
-        val imageUrls = listOf(
-            "https://example.com/image1.jpg",
-            "https://example.com/image2.jpg",
-            "https://example.com/image3.jpg",
-        )
-
-        // Randomly select values
-        val randomClubName = clubNames.random()
-        val randomLocation = locations.random()
-        val randomImageUrl = imageUrls.random()
-
-        val openingHours = OpeningHours(startTime = 9, endTime = 21)
-
-        return Club(
-            id = "",
-            name = randomClubName,
-            location = randomLocation,
-            imageUrl = randomImageUrl,
-            openingHours = openingHours
-        )
-    }
-
-
-    private fun generateRandomClubs(): List<Club> {
-        val clubs = mutableListOf<Club>()
-        repeat(10) {
-            clubs.add(generateRandomClub())
-        }
-        return clubs
-    }
-
-    suspend fun saveGeneratedClubs() {
-        val generatedClubs = generateRandomClubs()
-        for (club in generatedClubs) {
-            db.collection("clubs").document(club.id)
-                .set(club)
-                .addOnSuccessListener { Log.d(TAG, "Club successfully written!") }
-                .addOnFailureListener { e -> Log.w(TAG, "Error writing club document", e) }
-        }
-    }
     fun resetState() {
         _state.update { SignInState() }
     }
