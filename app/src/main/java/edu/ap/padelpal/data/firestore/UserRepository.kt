@@ -37,6 +37,7 @@ class UserRepository {
                     id = userDocument.getString("id") ?: "",
                     username = userDocument.getString("username") ?: "",
                     displayName = userDocument.getString("displayName") ?: "",
+                    profilePictureUrl = userDocument.getString("profilePictureUrl") ?: "",
                     preferences = preferences,
                     matchesWon = userDocument.getLong("matchesWon")?.toInt() ?: 0,
                     matchesPlayed = userDocument.getLong("matchesPlayed")?.toInt() ?: 0,

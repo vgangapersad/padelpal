@@ -101,6 +101,9 @@ fun ClubsScreen(navController: NavController) {
                         navController.navigate("ClubDetail/${club.id}")
                     })
                 }
+                item{
+                    Spacer(modifier = Modifier.height(100.dp))
+                }
             }
         }
     }
@@ -138,12 +141,17 @@ fun ClubItem(club: Club, onClick: () -> Unit) {
             ) {
                 Text(
                     club.name,
-                    style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.primary)
+                    style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.primary)
                 )
                 Spacer(modifier = Modifier.height(5.dp))
                 Text(
                     address,
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    "Mo - Sa from ${club.openingHours.startTime}:00 to ${club.openingHours.endTime}:00",
+                    style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onBackground)
                 )
             }
             AsyncImage(
@@ -151,7 +159,7 @@ fun ClubItem(club: Club, onClick: () -> Unit) {
                 contentDescription = club.name,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                        .height(88.dp)
+                        .height(100.dp)
                         .width(120.dp)
             )
         }

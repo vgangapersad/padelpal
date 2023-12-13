@@ -78,8 +78,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             if(isSystemInDarkTheme()){
                 window.statusBarColor = getColor(R.color.padelpal_dark_background)
+                window.navigationBarColor = getColor(R.color.padelpal_dark_bottomnav_background)
             } else{
                 window.statusBarColor = getColor(R.color.padelpal_light_background)
+                window.navigationBarColor = getColor(R.color.padelpal_light_bottomnav_background)
             }
             PadelPalTheme {
                 val items = listOf(
@@ -221,7 +223,10 @@ class MainActivity : ComponentActivity() {
                                 ) { backStackEntry ->
                                     val clubId = backStackEntry.arguments?.getString("clubId")
                                     clubId?.let {
-                                        ClubDetailScreen(navController, clubId = it)
+                                        ClubDetailScreen(
+                                            userData = googleAuthUiClient.getSignedInUser(),
+                                            navController,
+                                            clubId = it)
                                     }
                                 }
 
