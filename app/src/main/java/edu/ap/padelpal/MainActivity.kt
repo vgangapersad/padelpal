@@ -220,7 +220,10 @@ class MainActivity : ComponentActivity() {
                                 ) { backStackEntry ->
                                     val clubId = backStackEntry.arguments?.getString("clubId")
                                     clubId?.let {
-                                        ClubDetailScreen(navController, clubId = it)
+                                        ClubDetailScreen(
+                                            userData = googleAuthUiClient.getSignedInUser(),
+                                            navController,
+                                            clubId = it)
                                     }
                                 }
 

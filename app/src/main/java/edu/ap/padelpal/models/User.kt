@@ -4,6 +4,7 @@ data class User(
     val id: String,
     val username: String,
     val displayName: String,
+    val profilePictureUrl: String,
     val preferences: Preferences,
     val matchesWon: Int = 0,
     val matchesPlayed: Int = 0,

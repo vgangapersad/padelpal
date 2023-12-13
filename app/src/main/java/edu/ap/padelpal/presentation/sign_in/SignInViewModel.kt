@@ -29,7 +29,7 @@ class SignInViewModel: ViewModel() {
         if(result.data != null){
             if (!checkIfUserExists(result.data.userId)){
                 val userPreferences = Preferences()
-                val user = User(result.data.userId, result.data.username.toString(), result.data.username.toString(), userPreferences)
+                val user = User(result.data.userId, result.data.username.toString(), result.data.username.toString(), result.data.profilePictureUrl.toString(), userPreferences)
                 db.collection("users").document(result.data.userId)
                     .set(user)
                     .addOnSuccessListener { Log.d(TAG, "DocumentSnapshot successfully written!") }

@@ -46,6 +46,7 @@ android {
 
 dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx:24.9.1")
+    implementation("androidx.compose.material3:material3-android:1.2.0-alpha12")
     val nav_version = "2.7.5"
     val lifecycle_version = "2.6.2"
 
