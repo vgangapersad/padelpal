@@ -1,6 +1,7 @@
 package edu.ap.padelpal
 
 import ClubDetailScreen
+import MatchesScreen
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.Toast
@@ -34,7 +35,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -211,6 +211,9 @@ class MainActivity : ComponentActivity() {
                                 }
                                 composable("Clubs") {
                                     ClubsScreen(navController)
+                                }
+                                composable("Matches") {
+                                    MatchesScreen()
                                 }
                                 composable(
                                     route = "ClubDetail/{clubId}",
