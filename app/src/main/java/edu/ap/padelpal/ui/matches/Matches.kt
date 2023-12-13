@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,15 +23,19 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,12 +47,10 @@ import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-
-
 
 
 data class PadelTournament(
@@ -167,6 +170,7 @@ val tournaments = listOf(
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MatchesScreen() {
     val tabTitles = listOf("Upcoming", "Past")
@@ -174,40 +178,59 @@ fun MatchesScreen() {
     var searchQuery by remember { mutableStateOf("") }
 
 
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "Matches",
-                style = MaterialTheme.typography.headlineMedium
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            CenterAlignedTopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                ),
+                title = {
+                    Text(
+                        "Matches",
+                        style = MaterialTheme.typography.headlineLarge,
+                    )
+                },
+                scrollBehavior = scrollBehavior
             )
-        }
-        TabRow(
-            selectedTabIndex = selectedTabIndex
+        },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 8.dp)
+                .padding(top = 8.dp)
         ) {
-            tabTitles.forEachIndexed { index, title ->
-                Tab(
-                    selected = index == selectedTabIndex,
-                    onClick = { selectedTabIndex = index },
-                    text = { Text(text = title) }
-                )
+            TabRow(
+                selectedTabIndex = selectedTabIndex
+            ) {
+                tabTitles.forEachIndexed { index, title ->
+                    Tab(
+                        selected = index == selectedTabIndex,
+                        onClick = { selectedTabIndex = index },
+                        text = { Text(text = title) }
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            SearchBar(state = searchQuery, onValueChange = { searchQuery = it })
+            Spacer(modifier = Modifier.height(10.dp))
+
+            when (tabTitles[selectedTabIndex]) {
+                "Upcoming" -> UpcomingContent(searchQuery)
+                "Past" -> PastContent()
             }
         }
-        Spacer(modifier = Modifier.height(10.dp))
-        SearchBar(state = searchQuery, onValueChange = { searchQuery = it })
-        Spacer(modifier = Modifier.height(10.dp))
 
-        when (tabTitles[selectedTabIndex]) {
-            "Upcoming" -> UpcomingContent(searchQuery)
-            "Past" -> PastContent()
-        }
     }
+
 }
+
+
+
 
 @Composable
 fun UpcomingContent(searchQuery: String) {
@@ -239,7 +262,7 @@ fun MatchCard(tournament: PadelTournament) {
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(8.dp)
     ) {
-        Box(modifier = Modifier.height(230.dp)) {
+        Box(modifier = Modifier.height(220.dp)) {
             AsyncImage(
                 model = "https://img.redbull.com/images/c_crop,x_1295,y_0,h_2487,w_1989/c_fill,w_400,h_500/q_auto:low,f_auto/redbullcom/2022/4/1/hrxm462vtwdfpqvf4rdh/alejandro-galan-padel-action",
                 contentDescription = tournament.title,
@@ -267,9 +290,9 @@ fun MatchCard(tournament: PadelTournament) {
             ) {
                 Text(
                     text = tournament.title,
-                    style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.headlineSmall.copy(color = Color.White),
                 )
+                Spacer(modifier = Modifier.height(8.dp))
                 Row {
                     InformationCard("${tournament.playersJoined}/${tournament.maxPlayers}")
                     Spacer(modifier = Modifier.width(8.dp))
@@ -280,14 +303,14 @@ fun MatchCard(tournament: PadelTournament) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.DateRange, contentDescription = "Date", tint = Color.White)
+                    Icon(Icons.Default.DateRange, contentDescription = "Date", tint = Color.White, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(15.dp))
                     Text(text = "${tournament.date} - ${tournament.time}", style = MaterialTheme.typography.bodyMedium, color = Color.White)
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.LocationOn, contentDescription = "Location", tint = Color.White)
+                    Icon(Icons.Default.LocationOn, contentDescription = "Location", tint = Color.White, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(15.dp))
                     Text(text = tournament.location, style = MaterialTheme.typography.bodyMedium, color = Color.White)
                 }
@@ -314,7 +337,7 @@ fun InformationCard(text: String) {
         .background(Color.White)
         .padding(horizontal = 8.dp, vertical = 6.dp)
     ) {
-        Text(text = text, color = Color.Black, style = MaterialTheme.typography.bodySmall)
+        Text(text = text, color = Color.Black, style = MaterialTheme.typography.labelSmall)
     }
 }
 
