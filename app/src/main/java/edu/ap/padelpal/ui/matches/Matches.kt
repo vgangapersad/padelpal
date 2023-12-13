@@ -258,7 +258,7 @@ fun MatchCard(tournament: PadelTournament) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(15.dp),
+            .padding(top = 8.dp, bottom = 8.dp, start = 14.dp, end = 14.dp),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(8.dp)
     ) {
@@ -307,6 +307,8 @@ fun MatchCard(tournament: PadelTournament) {
                     Spacer(modifier = Modifier.width(15.dp))
                     Text(text = "${tournament.date} - ${tournament.time}", style = MaterialTheme.typography.bodyMedium, color = Color.White)
                 }
+                Spacer(modifier = Modifier.height(5.dp))
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
