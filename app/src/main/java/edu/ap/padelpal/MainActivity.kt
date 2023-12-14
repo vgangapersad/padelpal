@@ -157,7 +157,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         ) {
-                            NavHost(navController = navController, startDestination = "Profile") {
+                            NavHost(navController = navController, startDestination = "Matches") {
                                 composable("Profile") {
                                     ProfileScreen(
                                         userData = googleAuthUiClient.getSignedInUser(),

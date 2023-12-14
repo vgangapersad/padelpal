@@ -68,7 +68,7 @@ val tournaments = listOf(
     PadelTournament(
         id = "1",
         title = "Spring Padel Open",
-        maxPlayers = 8,
+        maxPlayers = 4,
         playersJoined = 2,
         gameType = "Mixed",
         date = "2023-04-10",
@@ -78,8 +78,8 @@ val tournaments = listOf(
     PadelTournament(
         id = "2",
         title = "Summer Slam",
-        maxPlayers = 6,
-        playersJoined = 4,
+        maxPlayers = 4,
+        playersJoined = 2,
         gameType = "Men Only",
         date = "2023-06-15",
         time = "15:00",
@@ -98,8 +98,8 @@ val tournaments = listOf(
     PadelTournament(
         id = "4",
         title = "Autumn Padel Fest",
-        maxPlayers = 10,
-        playersJoined = 3,
+        maxPlayers = 2,
+        playersJoined = 1,
         gameType = "Mixed",
         date = "2023-10-05",
         time = "14:00",
@@ -108,7 +108,7 @@ val tournaments = listOf(
     PadelTournament(
         id = "5",
         title = "Winter Padel Gala",
-        maxPlayers = 12,
+        maxPlayers = 4,
         playersJoined = 2,
         gameType = "Mixed",
         date = "2023-12-10",
@@ -118,8 +118,8 @@ val tournaments = listOf(
     PadelTournament(
         id = "6",
         title = "Pro Padel League",
-        maxPlayers = 16,
-        playersJoined = 4,
+        maxPlayers = 4,
+        playersJoined = 1,
         gameType = "Men Only",
         date = "2023-05-22",
         time = "17:00",
@@ -128,8 +128,8 @@ val tournaments = listOf(
     PadelTournament(
         id = "7",
         title = "Junior Padel Tournament",
-        maxPlayers = 6,
-        playersJoined = 0,
+        maxPlayers = 4,
+        playersJoined = 1,
         gameType = "Mixed",
         date = "2023-08-15",
         time = "10:00",
@@ -138,7 +138,7 @@ val tournaments = listOf(
     PadelTournament(
         id = "8",
         title = "Senior Padel Championship",
-        maxPlayers = 8,
+        maxPlayers = 4,
         playersJoined = 1,
         gameType = "Mixed",
         date = "2023-09-07",
@@ -158,7 +158,7 @@ val tournaments = listOf(
     PadelTournament(
         id = "10",
         title = "End of Year Padel Showdown",
-        maxPlayers = 14,
+        maxPlayers = 4,
         playersJoined = 2,
         gameType = "Mixed",
         date = "2023-12-28",
@@ -258,7 +258,7 @@ fun MatchCard(tournament: PadelTournament) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 8.dp, start = 14.dp, end = 14.dp),
+            .padding(top = 8.dp, bottom = 8.dp, start = 12.dp, end = 12.dp),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(8.dp)
     ) {
@@ -323,7 +323,7 @@ fun MatchCard(tournament: PadelTournament) {
                         .align(Alignment.End)
                         .clip(RoundedCornerShape(50)),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)){
-                    Text("Join", color = Color.White
+                    Text("Join", color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
@@ -347,27 +347,32 @@ fun InformationCard(text: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchBar(state: String, onValueChange: (String) -> Unit) {
-    TextField(
-        value = state,
-        onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth().padding(8.dp),
-        textStyle = LocalTextStyle.current.copy(color = Color.White),
-        shape = MaterialTheme.shapes.small.copy(CornerSize(percent = 50)),
-        colors = TextFieldDefaults.textFieldColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            cursorColor = MaterialTheme.colorScheme.onPrimary,
-            unfocusedIndicatorColor = Color.Transparent,
-            focusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent
-        ),
-        placeholder = { Text("Search", color = MaterialTheme.colorScheme.onPrimary) },
-        singleLine = true,
-        leadingIcon = {
-            Icon(
-                Icons.Filled.Search,
-                contentDescription = "Search Icon",
-                tint = MaterialTheme.colorScheme.onPrimary
-            )
-        }
-    )
+    Box(modifier = Modifier.padding(horizontal = 8.dp)
+    ){
+        TextField(
+            value = state,
+            onValueChange = onValueChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            textStyle = LocalTextStyle.current.copy(color = Color.White),
+            shape = MaterialTheme.shapes.small.copy(CornerSize(percent = 50)),
+            colors = TextFieldDefaults.textFieldColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                cursorColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent
+            ),
+            placeholder = { Text("Search", color = MaterialTheme.colorScheme.onSecondaryContainer) },
+            singleLine = true,
+            leadingIcon = {
+                Icon(
+                    Icons.Filled.Search,
+                    contentDescription = "Search Icon",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        )
+    }
 }

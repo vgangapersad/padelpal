@@ -84,7 +84,7 @@ fun ClubsScreen(navController: NavController) {
         Column(
             modifier = Modifier
                     .padding(innerPadding)
-                    .padding(horizontal = 8.dp)
+                    .padding(horizontal = 12.dp)
                     .padding(top = 8.dp)
         ) {
             Spacer(modifier = Modifier.height(10.dp))
@@ -175,19 +175,19 @@ fun SearchBar(state: TextFieldValue, onValueChange: (TextFieldValue) -> Unit) {
         textStyle = LocalTextStyle.current.copy(color = Color.White), // Zet hier de tekstkleur op wit
         shape = MaterialTheme.shapes.small.copy(CornerSize(percent = 50)),
         colors = TextFieldDefaults.textFieldColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            cursorColor = MaterialTheme.colorScheme.onPrimary,
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            cursorColor = MaterialTheme.colorScheme.onSecondaryContainer,
             unfocusedIndicatorColor = Color.Transparent,
             focusedIndicatorColor = Color.Transparent,
             disabledIndicatorColor = Color.Transparent
         ),
-        placeholder = { Text("Search", color = MaterialTheme.colorScheme.onPrimary) },
+        placeholder = { Text("Search", color = MaterialTheme.colorScheme.onSecondaryContainer) },
         singleLine = true,
         leadingIcon = {
             Icon(
                 Icons.Filled.Search,
                 contentDescription = "Search Icon",
-                tint = MaterialTheme.colorScheme.onPrimary
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
             )
         },
         modifier = Modifier
