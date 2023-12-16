@@ -1,4 +1,6 @@
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -71,6 +73,9 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
+import androidx.navigation.NavController
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 
 data class PadelTournament(
@@ -81,7 +86,8 @@ data class PadelTournament(
     val gameType: String,
     val date: String,
     val time: String,
-    val location: String
+    val location: String,
+    val participated:Boolean
 )
 
 val tournaments = listOf(
@@ -93,7 +99,8 @@ val tournaments = listOf(
         gameType = "Mixed",
         date = "2023-04-10",
         time = "10:00",
-        location = "Padel Park A"
+        location = "Padel Park A",
+        participated = true
     ),
     PadelTournament(
         id = "2",
@@ -101,9 +108,11 @@ val tournaments = listOf(
         maxPlayers = 4,
         playersJoined = 2,
         gameType = "Men Only",
-        date = "2023-06-15",
+        date = "2024-06-15",
         time = "15:00",
-        location = "City Padel Club"
+        location = "City Padel Club",
+        participated = false
+
     ),
     PadelTournament(
         id = "3",
@@ -111,9 +120,10 @@ val tournaments = listOf(
         maxPlayers = 4,
         playersJoined = 1,
         gameType = "Women Only",
-        date = "2023-07-20",
+        date = "2024-07-20",
         time = "09:00",
-        location = "Beachside Padel"
+        location = "Beachside Padel",
+        participated = false
     ),
     PadelTournament(
         id = "4",
@@ -123,7 +133,8 @@ val tournaments = listOf(
         gameType = "Mixed",
         date = "2023-10-05",
         time = "14:00",
-        location = "Mountain View Padel"
+        location = "Mountain View Padel",
+        participated = false
     ),
     PadelTournament(
         id = "5",
@@ -131,9 +142,10 @@ val tournaments = listOf(
         maxPlayers = 4,
         playersJoined = 2,
         gameType = "Mixed",
-        date = "2023-12-10",
+        date = "2024-12-10",
         time = "18:00",
-        location = "Downtown Padel Arena"
+        location = "Downtown Padel Arena",
+        participated = false
     ),
     PadelTournament(
         id = "6",
@@ -141,9 +153,10 @@ val tournaments = listOf(
         maxPlayers = 4,
         playersJoined = 1,
         gameType = "Men Only",
-        date = "2023-05-22",
+        date = "2024-05-22",
         time = "17:00",
-        location = "Pro Padel Court"
+        location = "Pro Padel Court",
+        participated = false
     ),
     PadelTournament(
         id = "7",
@@ -153,7 +166,8 @@ val tournaments = listOf(
         gameType = "Mixed",
         date = "2023-08-15",
         time = "10:00",
-        location = "Suburban Padel Club"
+        location = "Suburban Padel Club",
+        participated = false
     ),
     PadelTournament(
         id = "8",
@@ -161,9 +175,11 @@ val tournaments = listOf(
         maxPlayers = 4,
         playersJoined = 1,
         gameType = "Mixed",
-        date = "2023-09-07",
+        date = "2024-09-07",
         time = "16:00",
-        location = "Central Padel Courts"
+        location = "Central Padel Courts",
+        participated = false
+
     ),
     PadelTournament(
         id = "9",
@@ -173,7 +189,8 @@ val tournaments = listOf(
         gameType = "Women Only",
         date = "2023-11-30",
         time = "20:00",
-        location = "Riverside Padel"
+        location = "Riverside Padel" ,
+        participated = false
     ),
     PadelTournament(
         id = "10",
@@ -181,18 +198,20 @@ val tournaments = listOf(
         maxPlayers = 4,
         playersJoined = 2,
         gameType = "Mixed",
-        date = "2023-12-28",
+        date = "2024-12-28",
         time = "13:00",
-        location = "Highland Padel Complex"
+        location = "Highland Padel Complex",
+        participated = false
     )
 )
 
 
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MatchesScreen() {
+fun MatchesScreen(navController: NavController) {
     val tabTitles = listOf("Upcoming", "Past")
     var selectedTabIndex by remember { mutableStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
@@ -257,12 +276,14 @@ fun MatchesScreen() {
 
                 when (tabTitles[selectedTabIndex]) {
                     "Upcoming" -> UpcomingContent(searchQuery, listState)
-                    "Past" -> PastContent()
+                    "Past" -> PastContent(searchQuery, listState)
                 }
 
             }
             ExtendedFloatingActionButton(
-                onClick = { },
+                onClick = {
+                    navController.navigate("newMatch")
+                },
                 icon = { Icon(Icons.Filled.Add, contentDescription = "Add") },
                 text = {
                     AnimatedVisibility(
@@ -277,8 +298,8 @@ fun MatchesScreen() {
                     .padding(bottom = 95.dp, end = 16.dp)
                     .size(width = buttonWidth.value, height = 56.dp),
 
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
 
         }
@@ -286,25 +307,52 @@ fun MatchesScreen() {
 
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun UpcomingContent(searchQuery: String, listState: LazyListState) {
-    val filteredTournaments = tournaments.filter {
-        it.title.contains(searchQuery, ignoreCase = true) ||
-                it.gameType.contains(searchQuery, ignoreCase = true) ||
-                it.date.contains(searchQuery, ignoreCase = true) ||
-                it.time.contains(searchQuery, ignoreCase = true) ||
-                it.location.contains(searchQuery, ignoreCase = true)
+    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val currentDate = LocalDate.now()
+
+    val filteredUpcomingTournaments = tournaments.filter {
+        val tournamentDate = LocalDate.parse(it.date, dateFormatter)
+        tournamentDate.isAfter(currentDate) &&
+                (it.title.contains(searchQuery, ignoreCase = true) ||
+                        it.gameType.contains(searchQuery, ignoreCase = true) ||
+                        it.date.contains(searchQuery, ignoreCase = true) ||
+                        it.time.contains(searchQuery, ignoreCase = true) ||
+                        it.location.contains(searchQuery, ignoreCase = true))
     }
+        .sortedBy { LocalDate.parse(it.date, dateFormatter) }
+
     LazyColumn(state = listState) {
-        items(filteredTournaments) { tournament ->
+        items(filteredUpcomingTournaments) { tournament ->
             MatchCard(tournament)
         }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun PastContent() {
+fun PastContent(searchQuery: String, listState: LazyListState) {
 
+    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val currentDate = LocalDate.now()
+
+    val filteredPastTournaments = tournaments.filter {
+        val tournamentDate = LocalDate.parse(it.date, dateFormatter)
+        tournamentDate.isBefore(currentDate) &&
+                (it.title.contains(searchQuery, ignoreCase = true) ||
+                        it.gameType.contains(searchQuery, ignoreCase = true) ||
+                        it.date.contains(searchQuery, ignoreCase = true) ||
+                        it.time.contains(searchQuery, ignoreCase = true) ||
+                        it.location.contains(searchQuery, ignoreCase = true))
+    }
+
+    LazyColumn(state = listState) {
+        items(filteredPastTournaments) { tournament ->
+            MatchCard(tournament)
+        }
+    }
 }
 
 @Composable
