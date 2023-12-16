@@ -1,4 +1,14 @@
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +26,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
@@ -25,6 +36,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +63,14 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 
 
 data class PadelTournament(
@@ -176,9 +196,23 @@ fun MatchesScreen() {
     val tabTitles = listOf("Upcoming", "Past")
     var selectedTabIndex by remember { mutableStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
-
-
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    var isExtended by remember { mutableStateOf(true) }
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemScrollOffset }
+            .collect { offset ->
+                isExtended = offset == 0
+            }
+    }
+
+    val buttonWidth = animateDpAsState(
+        targetValue = if (isExtended) 100.dp else 56.dp,
+        animationSpec = keyframes {
+            durationMillis = 500
+        }, label = ""
+    )
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -197,43 +231,63 @@ fun MatchesScreen() {
                 scrollBehavior = scrollBehavior
             )
         },
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .padding(horizontal = 8.dp)
-                .padding(top = 8.dp)
-        ) {
-            TabRow(
-                selectedTabIndex = selectedTabIndex
+
+        ) { innerPadding ->
+        Box {
+            Column(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .padding(horizontal = 8.dp)
+                    .padding(top = 8.dp)
             ) {
-                tabTitles.forEachIndexed { index, title ->
-                    Tab(
-                        selected = index == selectedTabIndex,
-                        onClick = { selectedTabIndex = index },
-                        text = { Text(text = title) }
-                    )
+                TabRow(
+                    selectedTabIndex = selectedTabIndex
+                ) {
+                    tabTitles.forEachIndexed { index, title ->
+                        Tab(
+                            selected = index == selectedTabIndex,
+                            onClick = { selectedTabIndex = index },
+                            text = { Text(text = title) }
+                        )
+                    }
                 }
-            }
-            Spacer(modifier = Modifier.height(10.dp))
-            SearchBar(state = searchQuery, onValueChange = { searchQuery = it })
-            Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(10.dp))
+                SearchBar(state = searchQuery, onValueChange = { searchQuery = it })
+                Spacer(modifier = Modifier.height(10.dp))
 
-            when (tabTitles[selectedTabIndex]) {
-                "Upcoming" -> UpcomingContent(searchQuery)
-                "Past" -> PastContent()
+                when (tabTitles[selectedTabIndex]) {
+                    "Upcoming" -> UpcomingContent(searchQuery, listState)
+                    "Past" -> PastContent()
+                }
+
             }
+            ExtendedFloatingActionButton(
+                onClick = { },
+                icon = { Icon(Icons.Filled.Add, contentDescription = "Add") },
+                text = {
+                    AnimatedVisibility(
+                        visible = isExtended,
+                        enter = fadeIn() + expandHorizontally(),
+                    ) {
+                        Text("Add")
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(bottom = 95.dp, end = 16.dp)
+                    .size(width = buttonWidth.value, height = 56.dp),
+
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+
         }
-
     }
 
 }
 
-
-
-
 @Composable
-fun UpcomingContent(searchQuery: String) {
+fun UpcomingContent(searchQuery: String, listState: LazyListState) {
     val filteredTournaments = tournaments.filter {
         it.title.contains(searchQuery, ignoreCase = true) ||
                 it.gameType.contains(searchQuery, ignoreCase = true) ||
@@ -241,7 +295,7 @@ fun UpcomingContent(searchQuery: String) {
                 it.time.contains(searchQuery, ignoreCase = true) ||
                 it.location.contains(searchQuery, ignoreCase = true)
     }
-    LazyColumn {
+    LazyColumn(state = listState) {
         items(filteredTournaments) { tournament ->
             MatchCard(tournament)
         }
