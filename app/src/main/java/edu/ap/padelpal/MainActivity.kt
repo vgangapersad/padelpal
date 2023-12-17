@@ -3,6 +3,7 @@ package edu.ap.padelpal
 import ClubDetailScreen
 import MatchesScreen
 import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -10,6 +11,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
@@ -49,6 +51,7 @@ import edu.ap.padelpal.presentation.sign_in.GoogleAuthUIClient
 import edu.ap.padelpal.presentation.sign_in.SignInScreen
 import edu.ap.padelpal.presentation.sign_in.SignInViewModel
 import edu.ap.padelpal.ui.clubs.ClubsScreen
+import edu.ap.padelpal.ui.matches.NewMatchScreen
 import edu.ap.padelpal.ui.profile.ProfileScreen
 import edu.ap.padelpal.ui.profile.SettingsScreen
 import edu.ap.padelpal.ui.theme.PadelPalTheme
@@ -71,6 +74,7 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -215,7 +219,10 @@ class MainActivity : ComponentActivity() {
                                     ClubsScreen(navController)
                                 }
                                 composable("Matches") {
-                                    MatchesScreen()
+                                    MatchesScreen(navController)
+                                }
+                                composable("NewMatch") {
+                                    NewMatchScreen(navController)
                                 }
                                 composable(
                                     route = "ClubDetail/{clubId}",
