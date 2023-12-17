@@ -253,13 +253,6 @@ fun NewMatchScreen(navController: NavController) {
                     }
                 )
             }
-
-
-
-
-
-
-
             Spacer(modifier = Modifier.height(35 .dp))
             Row(
                 modifier = Modifier
@@ -281,9 +274,6 @@ fun NewMatchScreen(navController: NavController) {
         }
     }
 }
-
-
-
 
 @Composable
 fun CheckboxMaxPlayers(
