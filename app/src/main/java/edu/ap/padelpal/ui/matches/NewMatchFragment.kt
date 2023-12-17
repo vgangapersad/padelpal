@@ -84,20 +84,17 @@ fun NewMatchScreen(navController: NavController) {
     var selectedClub by remember { mutableStateOf(clubs[0]) }
     var isFocused by remember { mutableStateOf(false) }
 
-    var selectedMaxPlayers by remember { mutableStateOf(4) }
+    var selectedMaxPlayers by remember { mutableStateOf(2) }
     var selectedFriends by remember { mutableStateOf<List<Friend>>(listOf()) }
     var showFriendSelectionDialog by remember { mutableStateOf(false) }
     var currentFriendToModify by remember { mutableStateOf<Friend?>(null) }
     var showModifyFriendDialog by remember { mutableStateOf(false) }
 
 
-
-    // Functie om de dialoog te tonen om een vriend toe te voegen
     fun onAddFriend() {
         showFriendSelectionDialog = true
     }
 
-    // Functie om de dialoog te tonen om een vriend te verwijderen of te vervangen
     fun onModifyFriend(friend: Friend) {
         currentFriendToModify = friend
         showModifyFriendDialog = true
@@ -139,7 +136,7 @@ fun NewMatchScreen(navController: NavController) {
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Title") },
+                label = { Text("An awesome match title") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 15.dp)
@@ -190,19 +187,11 @@ fun NewMatchScreen(navController: NavController) {
             }
             Spacer(modifier = Modifier.height(35.dp))
 
-            // Max players
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Max players: ",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier
-                )
-                Spacer(modifier = Modifier.width(120.dp))
-
                 CheckboxMaxPlayers(
                     selectedMaxPlayers = selectedMaxPlayers,
                     onSelectMaxPlayers = { newSelection ->
@@ -219,7 +208,7 @@ fun NewMatchScreen(navController: NavController) {
 
 
             Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.Start,
                 modifier = Modifier.fillMaxWidth().padding(16.dp)
             ) {
                 for (i in 0 until selectedMaxPlayers) {
@@ -237,17 +226,16 @@ fun NewMatchScreen(navController: NavController) {
                         }
                     )
                 }
-            }  // Toon de selectiedialoog als het nodig is
+            }
             if (showFriendSelectionDialog) {
                 FriendSelectionDialog(
                     friendList = friends.filter { it !in selectedFriends },
                     onFriendSelected = { selectedFriend ->
-                        // Voeg de geselecteerde vriend toe aan de lijst en sluit de dialoog
                         selectedFriends = selectedFriends + selectedFriend
-                        showFriendSelectionDialog = false // Sluit de dialoog
+                        showFriendSelectionDialog = false
                     },
                     onDismissRequest = {
-                        showFriendSelectionDialog = false // Dit zal de dialoog verbergen wanneer de gebruiker erom vraagt
+                        showFriendSelectionDialog = false
                     }
                 )
             }
@@ -255,7 +243,6 @@ fun NewMatchScreen(navController: NavController) {
                 ModifyFriendDialog(
                     friend = currentFriendToModify!!,
                     onRemove = {
-                        // Voeg hier de logica toe om de vriend te verwijderen uit de lijst
                         selectedFriends = selectedFriends.filter { it != currentFriendToModify }
                         showModifyFriendDialog = false
                         currentFriendToModify = null
@@ -274,14 +261,13 @@ fun NewMatchScreen(navController: NavController) {
 
 
             Spacer(modifier = Modifier.height(35 .dp))
-            //Match of type
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Match of type: ",
+                    text = "Type of match: ",
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier
                 )
@@ -317,7 +303,7 @@ fun CheckboxMaxPlayers(
                 containerColor = if (selectedMaxPlayers == number1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
             ),
         ) {
-            Text(number1.toString(), fontSize = 12.sp)
+            Text("$number1 players", fontSize = 12.sp)
         }
         Spacer(modifier = Modifier.width(8.dp))
         Button(
@@ -326,7 +312,7 @@ fun CheckboxMaxPlayers(
                 containerColor = if (selectedMaxPlayers == number2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
             ),
         ) {
-            Text(number2.toString(), fontSize = 12.sp)
+            Text("$number2 players", fontSize = 12.sp)
         }
     }
 }@Composable
@@ -336,14 +322,14 @@ fun PlayerCircle(
     onRemoveOrReplace: (Friend) -> Unit
 ) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.Start,
         modifier = Modifier.padding(8.dp)
     ) {
         Box(
             modifier = Modifier
                 .size(60.dp)
                 .clip(CircleShape)
-                .background(if (friend == null) Color.LightGray else Color.Blue)
+                .background(if (friend == null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary)
                 .clickable { onCircleClicked(friend) },
             contentAlignment = Alignment.Center
         ) {
@@ -356,12 +342,12 @@ fun PlayerCircle(
                 )
                 Box(
                     Modifier
-                        .matchParentSize() // Zorgt ervoor dat de clickable modifier de hele Box beslaat
-                        .clickable { onRemoveOrReplace(friend) } // Roept de wijzigingsfunctie aan
+                        .matchParentSize()
+                        .clickable { onRemoveOrReplace(friend) }
                         .background(Color.Transparent)
                 )
             } else {
-                Icon(Icons.Filled.Add, contentDescription = "Add friend", tint = Color.White)
+                Icon(Icons.Filled.Add, contentDescription = "Add friend", tint = MaterialTheme.colorScheme.onPrimary)
             }
         }
         friend?.name?.let {
@@ -471,8 +457,9 @@ fun Checkbox(txt1:String, txt2:String) {
 
     Row(
         modifier = Modifier
-            .padding(start = 8.dp),
-        horizontalArrangement = Arrangement.Start
+        .fillMaxWidth()
+        .padding(start = 8.dp, end = 8.dp),
+        horizontalArrangement = Arrangement.End
     ) {
         Button(
             onClick = { selectedOption = txt1 },
@@ -512,10 +499,6 @@ fun PrivateMatchSwitch() {
         Switch(
             checked = isChecked,
             onCheckedChange = { isChecked = it },
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.secondary,
-                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         )
     }
 }
