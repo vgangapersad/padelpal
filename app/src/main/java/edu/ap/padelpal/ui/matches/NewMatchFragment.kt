@@ -7,11 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -49,8 +46,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.TextField
@@ -62,8 +57,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
-import kotlin.math.roundToInt
-
 
 val clubs = listOf(
     "Not set",
@@ -88,14 +81,28 @@ fun NewMatchScreen(navController: NavController) {
     val snackbarHostState = remember { SnackbarHostState() }
     var title by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
-    var selectedLocation by remember { mutableStateOf(clubs[0]) }
+    var selectedClub by remember { mutableStateOf(clubs[0]) }
     var isFocused by remember { mutableStateOf(false) }
-    var sliderPosition by remember { mutableStateOf(2f) }
 
-    var showDialog by remember { mutableStateOf(false) }
-    var friendToSelectIndex by remember { mutableStateOf(-1) }
-    var selectedFriends by remember { mutableStateOf(List(sliderPosition.toInt()) { Friend("", "") }) }
-    var selectedMatchType by remember { mutableStateOf("competitive") } // Begin met "competitive" als de standaard geselecteerde waarde
+    var selectedMaxPlayers by remember { mutableStateOf(4) }
+    var selectedFriends by remember { mutableStateOf<List<Friend>>(listOf()) }
+    var showFriendSelectionDialog by remember { mutableStateOf(false) }
+    var currentFriendToModify by remember { mutableStateOf<Friend?>(null) }
+    var showModifyFriendDialog by remember { mutableStateOf(false) }
+
+
+
+    // Functie om de dialoog te tonen om een vriend toe te voegen
+    fun onAddFriend() {
+        showFriendSelectionDialog = true
+    }
+
+    // Functie om de dialoog te tonen om een vriend te verwijderen of te vervangen
+    fun onModifyFriend(friend: Friend) {
+        currentFriendToModify = friend
+        showModifyFriendDialog = true
+    }
+
 
 
     Scaffold(
@@ -128,6 +135,7 @@ fun NewMatchScreen(navController: NavController) {
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
+            // input Title
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
@@ -136,27 +144,31 @@ fun NewMatchScreen(navController: NavController) {
                     .fillMaxWidth()
                     .padding(bottom = 15.dp)
             )
-
+            // select clubs
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded },
                 modifier = Modifier
-                    .border(1.dp, if (isFocused) MaterialTheme.colorScheme.primary else Color.Gray, RoundedCornerShape(4.dp))
+                    .border(
+                        1.dp,
+                        if (isFocused) MaterialTheme.colorScheme.primary else Color.Gray,
+                        RoundedCornerShape(4.dp)
+                    )
 
             ) {
                 TextField(
                     modifier = Modifier
                         .fillMaxWidth()
                         .menuAnchor()
-                        .onFocusChanged { focusState -> isFocused = focusState.isFocused}
+                        .onFocusChanged { focusState -> isFocused = focusState.isFocused }
                         .border(1.dp, Color.Gray, RoundedCornerShape(4.dp)),
                     readOnly = true,
-                    value = selectedLocation,
+                    value = selectedClub,
                     onValueChange = {},
                     label = { Text("Club") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     colors = TextFieldDefaults.textFieldColors(
-                        containerColor = Color.Transparent ,
+                        containerColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent
                     ),
@@ -169,97 +181,100 @@ fun NewMatchScreen(navController: NavController) {
                         DropdownMenuItem(
                             text = { Text(club) },
                             onClick = {
-                                selectedLocation = club
+                                selectedClub = club
                                 expanded = false
                             },
                         )
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(35 .dp))
+            Spacer(modifier = Modifier.height(35.dp))
 
+            // Max players
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Max players:",
+                    text = "Max players: ",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    modifier = Modifier
                 )
-                Spacer(modifier = Modifier.width(15.dp))
-                Slider(
-                    value = sliderPosition,
-                    onValueChange = { newValue ->
-                        val newCount = newValue.roundToInt()
-                        if (newCount > selectedFriends.size) {
-                            // Voeg nieuwe lege vrienden toe als het aantal is verhoogd
-                            selectedFriends = selectedFriends + List(newCount - selectedFriends.size) { Friend("", "") }
-                        } else if (newCount < selectedFriends.size) {
-                            // Behoud de ingevulde vrienden en verwijder alleen extra lege instanties
-                            selectedFriends = selectedFriends.take(newCount)
-                        }
-                        sliderPosition = newValue
+                Spacer(modifier = Modifier.width(120.dp))
+
+                CheckboxMaxPlayers(
+                    selectedMaxPlayers = selectedMaxPlayers,
+                    onSelectMaxPlayers = { newSelection ->
+                        selectedMaxPlayers = newSelection
                     },
-                    valueRange = 0f..10f,
-                    steps = 0,
-                    modifier = Modifier.weight(1f),
-                    onValueChangeFinished = {
-                    },
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                        inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                    ),
-                    thumb = {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = CircleShape
-                                )
-                                .padding(1.dp)
-                        ) {
-                            Text(
-                                text = sliderPosition.roundToInt().toString(),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                        }
-                    }
+                    number1 = 2,
+                    number2 = 4
                 )
             }
 
-            // Toon de FriendSelectionDialog als showDialog waar is
-            if (showDialog) {
-                FriendSelectionDialog(
-                    friendList = friends.filterNot { selectedFriends.contains(it) },
-                    onFriendSelected = { friend ->
-                        // Werk de lijst met geselecteerde vrienden bij
-                        val currentSelectedIndex = selectedFriends.indexOfFirst { it.name.isEmpty() }
-                        if (currentSelectedIndex != -1) {
-                            val updatedFriends = selectedFriends.toMutableList()
-                            updatedFriends[currentSelectedIndex] = friend
-                            selectedFriends = updatedFriends
-                        }
-                        showDialog = false
-                    }
-                )
-            }
+            // invite friends
+            Spacer(modifier = Modifier.height(20.dp))
 
-            CircleSelector(
-                selectedFriends = selectedFriends,
-                onSelectFriend = { _, index ->
-                    // Stel de index in van de geselecteerde vriend en toon de dialoog
-                    if (selectedFriends[index].name.isEmpty()) {
-                        friendToSelectIndex = index
-                        showDialog = true
-                    }
+
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
+            ) {
+                for (i in 0 until selectedMaxPlayers) {
+                    PlayerCircle(
+                        friend = selectedFriends.getOrNull(i),
+                        onCircleClicked = { friend ->
+                            if (friend == null) {
+                                onAddFriend()
+                            } else {
+                                onModifyFriend(friend)
+                            }
+                        },
+                        onRemoveOrReplace = { friend ->
+                            onModifyFriend(friend)
+                        }
+                    )
                 }
-            )
-            Spacer(modifier = Modifier.height(35 .dp))
+            }  // Toon de selectiedialoog als het nodig is
+            if (showFriendSelectionDialog) {
+                FriendSelectionDialog(
+                    friendList = friends.filter { it !in selectedFriends },
+                    onFriendSelected = { selectedFriend ->
+                        // Voeg de geselecteerde vriend toe aan de lijst en sluit de dialoog
+                        selectedFriends = selectedFriends + selectedFriend
+                        showFriendSelectionDialog = false // Sluit de dialoog
+                    },
+                    onDismissRequest = {
+                        showFriendSelectionDialog = false // Dit zal de dialoog verbergen wanneer de gebruiker erom vraagt
+                    }
+                )
+            }
+            if (showModifyFriendDialog && currentFriendToModify != null) {
+                ModifyFriendDialog(
+                    friend = currentFriendToModify!!,
+                    onRemove = {
+                        // Voeg hier de logica toe om de vriend te verwijderen uit de lijst
+                        selectedFriends = selectedFriends.filter { it != currentFriendToModify }
+                        showModifyFriendDialog = false
+                        currentFriendToModify = null
+                    },
+                    onDismissRequest = {
+                        showModifyFriendDialog = false
+                        currentFriendToModify = null
+                    }
+                )
+            }
 
+
+
+
+
+
+
+            Spacer(modifier = Modifier.height(35 .dp))
+            //Match of type
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -270,9 +285,9 @@ fun NewMatchScreen(navController: NavController) {
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier
                 )
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(15.dp))
 
-                MatchOfType()
+                Checkbox("Competitive" , "Friendly")
             }
             Spacer(modifier = Modifier.height(20 .dp))
             PrivateMatchSwitch()
@@ -282,112 +297,103 @@ fun NewMatchScreen(navController: NavController) {
 }
 
 
-@OptIn(ExperimentalLayoutApi::class)
+
+
 @Composable
-fun CircleSelector(
-    selectedFriends: List<Friend>,
-    onSelectFriend: (Friend, Int) -> Unit
+fun CheckboxMaxPlayers(
+    selectedMaxPlayers: Int,
+    onSelectMaxPlayers: (Int) -> Unit,
+    number1: Int,
+    number2: Int
 ) {
-    FlowRow(
+    Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 0.dp),
+            .padding(start = 8.dp),
+        horizontalArrangement = Arrangement.Start
     ) {
-        selectedFriends.forEachIndexed { index, friend ->
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(8.dp)
-            ) {
+        Button(
+            onClick = { onSelectMaxPlayers(number1) },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (selectedMaxPlayers == number1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+            ),
+        ) {
+            Text(number1.toString(), fontSize = 12.sp)
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Button(
+            onClick = { onSelectMaxPlayers(number2) },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (selectedMaxPlayers == number2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+            ),
+        ) {
+            Text(number2.toString(), fontSize = 12.sp)
+        }
+    }
+}@Composable
+fun PlayerCircle(
+    friend: Friend?,
+    onCircleClicked: (Friend?) -> Unit,
+    onRemoveOrReplace: (Friend) -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(60.dp)
+                .clip(CircleShape)
+                .background(if (friend == null) Color.LightGray else Color.Blue)
+                .clickable { onCircleClicked(friend) },
+            contentAlignment = Alignment.Center
+        ) {
+            if (friend != null) {
+                Image(
+                    painter = rememberImagePainter(friend.photo),
+                    contentDescription = friend.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(60.dp)
+                )
                 Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.onSurfaceVariant)
-                        .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                        .clickable { onSelectFriend(friend, index) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (friend.name.isNotEmpty()) {
-                        Image(
-                            painter = rememberImagePainter(
-                                data = friend.photo,
-                                builder = {
-                                    transformations(coil.transform.CircleCropTransformation())
-                                }
-                            ),
-                            contentDescription = friend.name,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = "Toevoegen",
-                            modifier = Modifier.size(24.dp),
-                            tint =MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    }
-                }
-                if (friend.name.isNotEmpty()) {
-                    Text(
-                        text = friend.name,
-                        fontSize = 12.sp,
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(top = 4.dp)
-                    )
-                }
+                    Modifier
+                        .matchParentSize() // Zorgt ervoor dat de clickable modifier de hele Box beslaat
+                        .clickable { onRemoveOrReplace(friend) } // Roept de wijzigingsfunctie aan
+                        .background(Color.Transparent)
+                )
+            } else {
+                Icon(Icons.Filled.Add, contentDescription = "Add friend", tint = Color.White)
             }
+        }
+        friend?.name?.let {
+            Text(
+                text = it,
+                fontSize = 14.sp,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
         }
     }
 }
 
-
 @Composable
 fun FriendSelectionDialog(
     friendList: List<Friend>,
-    onFriendSelected: (Friend) -> Unit
+    onFriendSelected: (Friend) -> Unit,
+    onDismissRequest: () -> Unit
 ) {
-    var showDialog by remember { mutableStateOf(true) }
-
-    if (showDialog) {
+    if (friendList.isNotEmpty()) {
         AlertDialog(
-            onDismissRequest = { showDialog = false },
+            onDismissRequest = onDismissRequest,
             title = { Text("Select a Friend") },
             text = {
                 LazyColumn {
                     items(friendList) { friend ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onFriendSelected(friend)
-                                    showDialog = false
-                                }
-                                .padding(8.dp)
-                        ) {
-                            Image(
-                                painter = rememberImagePainter(
-                                    data = friend.photo,
-                                    builder = {
-                                        crossfade(true)
-                                    }
-                                ),
-                                contentDescription = friend.name,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-                            Spacer(modifier = Modifier.width(18.dp))
-                            Text(friend.name, style = MaterialTheme.typography.bodyLarge)
-                        }
+                        FriendItem(friend, onFriendSelected)
                     }
                 }
             },
             confirmButton = {
                 Button(
-                    onClick = { showDialog = false }
+                    onClick = onDismissRequest
                 ) {
                     Text("Cancel")
                 }
@@ -397,8 +403,71 @@ fun FriendSelectionDialog(
 }
 
 @Composable
-fun MatchOfType() {
-    var selectedOption by remember { mutableStateOf("Competitive") }
+fun FriendItem(
+    friend: Friend,
+    onFriendSelected: (Friend) -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onFriendSelected(friend) }
+            .padding(8.dp)
+    ) {
+        Image(
+            painter = rememberImagePainter(
+                data = friend.photo,
+                builder = {
+                    crossfade(true)
+                }
+            ),
+            contentDescription = friend.name,
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
+        Spacer(modifier = Modifier.width(18.dp))
+        Text(friend.name, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+@Composable
+fun ModifyFriendDialog(
+    friend: Friend,
+    onRemove: () -> Unit,
+    onDismissRequest: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text("Modify Friend") },
+        text = {
+            Column {
+                Text(
+                    text = "Are you sure you want to remove ${friend.name}?",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = onRemove,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Remove")
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismissRequest) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+
+
+@Composable
+fun Checkbox(txt1:String, txt2:String) {
+    var selectedOption by remember { mutableStateOf(txt1) }
 
     Row(
         modifier = Modifier
@@ -406,23 +475,21 @@ fun MatchOfType() {
         horizontalArrangement = Arrangement.Start
     ) {
         Button(
-            onClick = { selectedOption = "Competitive" },
+            onClick = { selectedOption = txt1 },
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (selectedOption == "Competitive") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                containerColor = if (selectedOption == txt1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
             ),
-            modifier = Modifier.size(width = 120.dp, height = 35.dp)
         ) {
-            Text("Competitive", fontSize = 12.sp)
+            Text(txt1, fontSize = 12.sp)
         }
         Spacer(modifier = Modifier.width(8.dp))
         Button(
-            onClick = { selectedOption = "Friendly" },
+            onClick = { selectedOption = txt2 },
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (selectedOption == "Friendly") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                containerColor = if (selectedOption == txt2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
             ),
-            modifier = Modifier.size(width = 110.dp, height = 35.dp)
         ) {
-            Text("Friendly", fontSize = 12.sp)
+            Text(txt2, fontSize = 12.sp)
         }
     }
 }
