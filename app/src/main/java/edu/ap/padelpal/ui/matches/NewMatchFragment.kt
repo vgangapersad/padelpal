@@ -1,6 +1,5 @@
 package edu.ap.padelpal.ui.matches
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,7 +46,6 @@ import androidx.navigation.NavController
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.Alignment
@@ -56,7 +54,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberImagePainter
+import coil.compose.AsyncImage
+
 
 val clubs = listOf(
     "Not set",
@@ -84,12 +83,13 @@ fun NewMatchScreen(navController: NavController) {
     var selectedClub by remember { mutableStateOf(clubs[0]) }
     var isFocused by remember { mutableStateOf(false) }
 
+    var selectedMatchOfType by remember { mutableStateOf("Competitive") }
     var selectedMaxPlayers by remember { mutableStateOf(2) }
     var selectedFriends by remember { mutableStateOf<List<Friend>>(listOf()) }
     var showFriendSelectionDialog by remember { mutableStateOf(false) }
     var currentFriendToModify by remember { mutableStateOf<Friend?>(null) }
     var showModifyFriendDialog by remember { mutableStateOf(false) }
-
+    var isChecked by remember { mutableStateOf(false) }
 
     fun onAddFriend() {
         showFriendSelectionDialog = true
@@ -132,7 +132,6 @@ fun NewMatchScreen(navController: NavController) {
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // input Title
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
@@ -141,7 +140,6 @@ fun NewMatchScreen(navController: NavController) {
                     .fillMaxWidth()
                     .padding(bottom = 15.dp)
             )
-            // select clubs
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded },
@@ -202,14 +200,13 @@ fun NewMatchScreen(navController: NavController) {
                 )
             }
 
-            // invite friends
             Spacer(modifier = Modifier.height(20.dp))
 
 
 
             Row(
                 horizontalArrangement = Arrangement.Start,
-                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 for (i in 0 until selectedMaxPlayers) {
                     PlayerCircle(
@@ -266,10 +263,16 @@ fun NewMatchScreen(navController: NavController) {
                 )
                 Spacer(modifier = Modifier.width(15.dp))
 
-                Checkbox("Competitive" , "Friendly")
+                Checkbox(
+                    selectedOption = selectedMatchOfType,
+                    onOptionSelected = { selectedMatchOfType = it }
+                )
             }
             Spacer(modifier = Modifier.height(20 .dp))
-            PrivateMatchSwitch()
+            PrivateMatchSwitch(
+                isChecked = isChecked,
+                onCheckedChange = { isChecked = it }
+            )
 
         }
     }
@@ -324,8 +327,8 @@ fun PlayerCircle(
             contentAlignment = Alignment.Center
         ) {
             if (friend != null) {
-                Image(
-                    painter = rememberImagePainter(friend.photo),
+                AsyncImage(
+                    model =friend.photo,
                     contentDescription = friend.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.size(60.dp)
@@ -390,18 +393,13 @@ fun FriendItem(
             .clickable { onFriendSelected(friend) }
             .padding(8.dp)
     ) {
-        Image(
-            painter = rememberImagePainter(
-                data = friend.photo,
-                builder = {
-                    crossfade(true)
-                }
-            ),
+        AsyncImage(
+            model = friend.photo,
             contentDescription = friend.name,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape),
-            contentScale = ContentScale.Crop
         )
         Spacer(modifier = Modifier.width(18.dp))
         Text(friend.name, style = MaterialTheme.typography.bodyLarge)
@@ -442,40 +440,36 @@ fun ModifyFriendDialog(
 
 
 @Composable
-fun Checkbox(txt1:String, txt2:String) {
-    var selectedOption by remember { mutableStateOf(txt1) }
-
+fun Checkbox(selectedOption: String, onOptionSelected: (String) -> Unit) {
     Row(
         modifier = Modifier
-        .fillMaxWidth()
-        .padding(start = 8.dp, end = 8.dp),
+            .fillMaxWidth(),
         horizontalArrangement = Arrangement.End
     ) {
         Button(
-            onClick = { selectedOption = txt1 },
+            onClick = { onOptionSelected("Competitive") },
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (selectedOption == txt1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                containerColor = if (selectedOption == "Competitive") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
             ),
         ) {
-            Text(txt1, fontSize = 12.sp)
+            Text("Competitive", fontSize = 12.sp)
         }
         Spacer(modifier = Modifier.width(8.dp))
         Button(
-            onClick = { selectedOption = txt2 },
+            onClick = { onOptionSelected("Friendly") },
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (selectedOption == txt2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                containerColor = if (selectedOption == "Friendly") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
             ),
         ) {
-            Text(txt2, fontSize = 12.sp)
+            Text("Friendly", fontSize = 12.sp)
         }
     }
 }
 
 
-@Composable
-fun PrivateMatchSwitch() {
-    var isChecked by remember { mutableStateOf(false) }
 
+@Composable
+fun PrivateMatchSwitch(isChecked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth(),
@@ -488,7 +482,7 @@ fun PrivateMatchSwitch() {
         )
         Switch(
             checked = isChecked,
-            onCheckedChange = { isChecked = it },
+            onCheckedChange = onCheckedChange,
         )
     }
 }
