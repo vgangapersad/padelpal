@@ -47,6 +47,7 @@ android {
 dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx:24.9.1")
     implementation("androidx.compose.material3:material3-android:1.2.0-alpha12")
+    implementation("androidx.test.ext:junit-ktx:1.1.5")
     val nav_version = "2.7.5"
     val lifecycle_version = "2.6.2"
 
@@ -76,7 +77,6 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.5")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.5")
     testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     implementation("androidx.activity:activity-compose:1.8.1")
