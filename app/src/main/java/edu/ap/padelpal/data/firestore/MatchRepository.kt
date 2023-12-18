@@ -3,8 +3,8 @@ package edu.ap.padelpal.data.firestore
 import android.annotation.SuppressLint
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import edu.ap.padelpal.models.MatchType
-import edu.ap.padelpal.models.genderPreference
+import edu.ap.padelpal.models.MatchTypes
+import edu.ap.padelpal.models.GenderPreferences
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
@@ -25,9 +25,9 @@ class MatchRepository {
         playerIds: List<String>,
         organizerId: String,
         amountOfPlayers: Int,
-        matchType: MatchType,
+        matchType: MatchTypes,
         isPrivate: Boolean,
-        genderPreference: genderPreference,
+        genderPreference: GenderPreferences,
     ): String {
         try {
             val dateLong = date.toEpochDay()

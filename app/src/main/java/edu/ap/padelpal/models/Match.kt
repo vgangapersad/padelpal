@@ -7,17 +7,17 @@ data class Match(
     val playerIds: List<String>,
     val organizerId: String,
     val amountOfPlayers: Int,
-    val matchType: MatchType,
+    val matchType: MatchTypes,
     val isPrivate: Boolean,
-    val genderPreference: genderPreference,
+    val genderPreference: GenderPreferences,
 )
 
-enum class MatchType {
+enum class MatchTypes {
     competitive,
     friendly,
 }
 
-enum class genderPreference {
+enum class GenderPreferences {
     all,
     men,
     women,

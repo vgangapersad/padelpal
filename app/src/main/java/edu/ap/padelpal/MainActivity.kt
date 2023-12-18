@@ -222,7 +222,7 @@ class MainActivity : ComponentActivity() {
                                     MatchesScreen(navController)
                                 }
                                 composable("NewMatch") {
-                                    NewMatchScreen(navController)
+                                    NewMatchScreen(userData = googleAuthUiClient.getSignedInUser(), navController)
                                 }
                                 composable(
                                     route = "ClubDetail/{clubId}",
