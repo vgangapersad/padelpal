@@ -120,7 +120,6 @@ fun ClubItem(club: Club, onClick: () -> Unit) {
                         shape = MaterialTheme.shapes.medium
                 ),
     ) {
-
         Row(
             modifier = Modifier
                     .fillMaxWidth()

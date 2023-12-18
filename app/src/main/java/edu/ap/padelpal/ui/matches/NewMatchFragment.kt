@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -67,6 +68,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -83,10 +86,8 @@ import edu.ap.padelpal.models.StartTime
 import edu.ap.padelpal.models.User
 import edu.ap.padelpal.presentation.sign_in.UserData
 import edu.ap.padelpal.ui.components.BookCourtModalBottomSheet
-import edu.ap.padelpal.ui.components.CourtDatePickerDialog
 import edu.ap.padelpal.ui.components.IndeterminateCircularIndicator
-import edu.ap.padelpal.utilities.getAvailableStartTimes
-import kotlinx.coroutines.CoroutineScope
+import edu.ap.padelpal.utilities.formatDateForDisplay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
@@ -96,7 +97,6 @@ import java.time.LocalTime
 @Composable
 fun NewMatchScreen(userData: UserData?, navController: NavController) {
     val matchRepository = MatchRepository()
-    val bookingRepository = BookingRepository()
     val clubRepository = ClubRepository()
     val userRepository = UserRepository()
 
@@ -108,7 +108,7 @@ fun NewMatchScreen(userData: UserData?, navController: NavController) {
     var bookings by remember { mutableStateOf(emptyList<Booking>()) }
 
     val snackbarHostState = remember { SnackbarHostState() }
-    var title by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf<String?>(null) }
     var selectedClub by remember { mutableStateOf<Club?>(null) }
     var selectedGenderPreference by remember { mutableStateOf(GenderPreferences.all) }
     var isFocused by remember { mutableStateOf(false) }
@@ -120,6 +120,13 @@ fun NewMatchScreen(userData: UserData?, navController: NavController) {
     var currentFriendToModify by remember { mutableStateOf<User?>(null) }
     var showModifyFriendDialog by remember { mutableStateOf(false) }
     var isPrivate by remember { mutableStateOf(false) }
+
+    var selectedDate by remember {
+        mutableStateOf<LocalDate>(LocalDate.now())
+    }
+    var selectedTime by remember {
+        mutableStateOf<LocalTime?>(null)
+    }
 
     fun onAddFriend() {
         showFriendSelectionDialog = true
@@ -163,7 +170,7 @@ fun NewMatchScreen(userData: UserData?, navController: NavController) {
         LazyColumn(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 24.dp)
                 .fillMaxSize()
         ) {
             if (!(clubs.isEmpty() || friends.isEmpty())) {
@@ -171,9 +178,14 @@ fun NewMatchScreen(userData: UserData?, navController: NavController) {
                     Spacer(modifier = Modifier.height(16.dp))
 
                     OutlinedTextField(
-                        value = title,
+                        value = if (title != null) title.toString() else "",
                         onValueChange = { title = it },
                         label = { Text("An awesome match title") },
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            imeAction = ImeAction.Done,
+                            autoCorrect = true,
+                            capitalization = KeyboardCapitalization.Sentences
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 15.dp)
@@ -196,7 +208,11 @@ fun NewMatchScreen(userData: UserData?, navController: NavController) {
                                 .fillMaxWidth()
                                 .menuAnchor()
                                 .onFocusChanged { focusState -> isFocused = focusState.isFocused }
-                                .border(1.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(4.dp)),
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.secondary,
+                                    RoundedCornerShape(4.dp)
+                                ),
                             readOnly = true,
                             value = selectedGenderPreference.name.capitalize(),
                             onValueChange = {},
@@ -314,18 +330,38 @@ fun NewMatchScreen(userData: UserData?, navController: NavController) {
                     )
                 }
                 item {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    if(selectedTime != null){
+                        Text(
+                            text = "Court will be booked for this match: ",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier
+                        )
+                        selectedClub?.let {
+                            ClubCard(
+                            club = it,
+                            onClick = {scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) {
+                                    showBottomSheet = true
+                                }
+                            }},
+                                    date = selectedDate,
+                                    time = selectedTime!!
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(0.dp))
                     OutlinedButton(
                         onClick = {
                             showBottomSheet = true
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(8.dp),
                     )
                     {
-                        Text("Book a court")
+                        Text(if(selectedTime == null) "Book a court" else "Edit booking")
                     }
-                    Spacer(modifier = Modifier.height(100.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
                 item {
                     if (showBottomSheet) {
@@ -339,14 +375,46 @@ fun NewMatchScreen(userData: UserData?, navController: NavController) {
                                 selectedClub = it,
                                 onSelectedClub = {o -> selectedClub = o},
                                 clubs = clubs,
-                                userData = userData,
+                                selectedDate = selectedDate,
+                                selectedTime = selectedTime,
+                                onSelectedDate = {o -> selectedDate = o},
+                                onSelectedTime = {o -> selectedTime = o},
                             )
                         }
                     }
                 }
+                item {
+                    Button(
+//                        onClick = {
+//                            if (userData != null && selectedTime != null && title != null && ) {
+//                                val matchResult =  scope.launch {
+//                                    matchRepository.createMatch(
+//
+//                                    )
+//                                }
+//                                if (!matchResult.isCancelled){
+//                                    Toast.makeText(context, "Match published", Toast.LENGTH_LONG).show()
+//                                    scope.launch {
+//                                        startTimes = getAvailableStartTimes(club, selectedDate)
+//                                    }
+//                                } else {
+//                                    Toast.makeText(context, "Try again later", Toast.LENGTH_LONG).show()
+//                                }
+//                            }
+//                        },
+                        onClick = {},
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        enabled = (selectedTime != null) && selectedFriends.isNotEmpty() && (title != null)
+                    )
+                    {
+                        Text("Publish match")
+                    }
+                    Spacer(modifier = Modifier.height(100.dp))
+                }
             } else {
                 item {
-                    IndeterminateCircularIndicator(label = "Loading your best options")
+                    IndeterminateCircularIndicator(label = "Loading the best options")
                 }
             }
         }
@@ -567,13 +635,14 @@ fun PrivateMatchSwitch(isChecked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ClubItem(club: Club, onClick: () -> Unit) {
+fun ClubCard(club: Club, onClick: () -> Unit, date: LocalDate, time: LocalTime) {
     val address = club.location.address + ", " + club.location.city
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(PaddingValues(vertical = 15.dp))
             .clickable(onClick = onClick)
             .border(
                 0.5.dp,
@@ -597,20 +666,23 @@ fun ClubItem(club: Club, onClick: () -> Unit) {
                     .padding(start = 35.dp),
                 verticalArrangement = Arrangement.Center
             ) {
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    club.name,
+                    "At ${club.name}",
                     style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.primary)
                 )
                 Spacer(modifier = Modifier.height(5.dp))
                 Text(
+                    "${formatDateForDisplay(date)} ${time} - ${time.plusMinutes(90)}",
+                    style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.secondary)
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+                Text(
                     address,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    "Mo - Sa from ${club.openingHours.startTime}:00 to ${club.openingHours.endTime}:00",
-                    style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onBackground)
-                )
             }
             AsyncImage(
                 model = club.imageUrl,

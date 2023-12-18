@@ -68,22 +68,17 @@ fun BookCourtModalBottomSheet(
     selectedClub: Club,
     onSelectedClub: (Club) -> Unit,
     clubs : List<Club>,
-    userData: UserData?
+    selectedDate: LocalDate,
+    onSelectedDate: (LocalDate) -> Unit,
+    selectedTime: LocalTime?,
+    onSelectedTime: (LocalTime) -> Unit
 ) {
     val bookingRepository = BookingRepository()
     var startTimes by remember { mutableStateOf(emptyList<StartTime>()) }
-    var selectedDate by remember {
-        mutableStateOf<LocalDate>(LocalDate.now())
-    }
-    var selectedTime by remember {
-        mutableStateOf<LocalTime?>(null)
-    }
 
     var showDatePicker by remember {
         mutableStateOf(false)
     }
-
-    val context = LocalContext.current
 
     LaunchedEffect(key1 = bookingRepository, key2 = selectedDate) {
         startTimes = getAvailableStartTimes(selectedClub, selectedDate)
@@ -165,10 +160,10 @@ fun BookCourtModalBottomSheet(
                         }
                         OutlinedButton(onClick = {}) {
                             Text(
-                                text = if (selectedTime != null) "${selectedTime.toString()} - ${
-                                    selectedTime!!.plusMinutes(
+                                text = if (selectedTime != null) "${selectedTime} - ${
+                                    selectedTime.plusMinutes(
                                         90
-                                    ).toString()
+                                    )
                                 }" else "always 90 min"
                             )
                         }
@@ -183,7 +178,7 @@ fun BookCourtModalBottomSheet(
                 Spacer(modifier = Modifier.height(16.dp))
                 if (showDatePicker) {
                     CourtDatePickerDialog(
-                        onDateSelected = { selectedDate = it },
+                        onDateSelected = { onSelectedDate(it) },
                         onDismiss = {
                             showDatePicker = false
                         }
@@ -197,7 +192,7 @@ fun BookCourtModalBottomSheet(
                 ) {
                     startTimes.forEach { startTime ->
                         FilledTonalButton(
-                            onClick = { selectedTime = startTime.time },
+                            onClick = { onSelectedTime(startTime.time) },
                             colors = if (selectedTime == startTime.time) ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -215,25 +210,9 @@ fun BookCourtModalBottomSheet(
             item {
                 Button(
                     onClick = {
-                        if (userData != null && selectedTime != null) {
-                            val bookingResult =  scope.launch {
-                                bookingRepository.createBooking(
-                                    clubId = selectedClub.id,
-                                    userId = userData.userId,
-                                    matchId = "test",
-                                    date = selectedDate,
-                                    startTime = selectedTime!!,
-                                    durationMinutes = 90
-                                )
-                            }
-
-                            if (!bookingResult.isCancelled){
-                                Toast.makeText(context, "Booking successful!", Toast.LENGTH_LONG).show()
-                                scope.launch {
-                                    startTimes = getAvailableStartTimes(selectedClub, selectedDate)
-                                }
-                            } else {
-                                Toast.makeText(context, "Try again later", Toast.LENGTH_LONG).show()
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            if (!sheetState.isVisible) {
+                                onShowBottomSheet(false)
                             }
                         }
                     },
@@ -243,20 +222,12 @@ fun BookCourtModalBottomSheet(
                     enabled = selectedTime != null
                 )
                 {
-                    Text("Book this court")
+                    Text("Select these options")
                 }
                 Spacer(modifier = Modifier.height(100.dp))
             }
         }
-        Button(onClick = {
-            scope.launch { sheetState.hide() }.invokeOnCompletion {
-                if (!sheetState.isVisible) {
-                    onShowBottomSheet(false)
-                }
-            }
-        }) {
-            Text("Hide bottom sheet")
-        }
+
         Spacer(modifier = Modifier.height(100.dp))
     }
 }
