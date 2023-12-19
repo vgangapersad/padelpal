@@ -228,9 +228,7 @@ fun MatchesScreen(navController: NavController) {
 
     val buttonWidth = animateDpAsState(
         targetValue = if (isExtended) 100.dp else 56.dp,
-        animationSpec = keyframes {
-            durationMillis = 500
-        }, label = ""
+        label = ""
     )
 
     Scaffold(
