@@ -1,7 +1,7 @@
 package edu.ap.padelpal.models
 
 data class Match(
-    val id: String,
+    var id: String,
     val title: String,
     val date: Long,
     val playerIds: List<String>,

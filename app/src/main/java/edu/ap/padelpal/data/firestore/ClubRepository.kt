@@ -28,7 +28,7 @@ class ClubRepository {
     }
 
     suspend fun getClub(id: String): Club {
-        var club: Club
+        val club: Club
         try {
             val querySnapshot = collectionRef.document(id).get().await()
                 club = querySnapshot.toObject(Club::class.java)!!

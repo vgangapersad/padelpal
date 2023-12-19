@@ -1,10 +1,15 @@
 package edu.ap.padelpal.data.firestore
 
 import android.annotation.SuppressLint
+import android.os.Build
+import androidx.annotation.RequiresApi
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import edu.ap.padelpal.models.Club
 import edu.ap.padelpal.models.MatchTypes
 import edu.ap.padelpal.models.GenderPreferences
+import edu.ap.padelpal.models.Match
 import edu.ap.padelpal.models.User
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
@@ -75,7 +80,132 @@ class MatchRepository {
         }
     }
 
-    suspend fun getAllMatches(isUpcoming: Boolean = false, isPast: Boolean = false) {
+    suspend fun getAllMatches(isUpcoming: Boolean = false, isPast: Boolean = false): List<Match> {
+        val matches = mutableListOf<Match>()
+        try {
+            val currentTimestamp = System.currentTimeMillis()
 
+            val query = when {
+                isUpcoming -> {
+                    collectionRef
+                        .whereGreaterThanOrEqualTo("date", currentTimestamp)
+                        .orderBy("date")
+                }
+                isPast -> {
+                    collectionRef
+                        .whereLessThan("date", currentTimestamp)
+                        .orderBy("date", Query.Direction.DESCENDING)
+                }
+                else -> {
+                    collectionRef.orderBy("date")
+                }
+            }
+
+            val querySnapshot = query.get().await()
+
+            for (doc in querySnapshot) {
+                val match = doc.toObject(Match::class.java)
+                // Set the auto-generated document ID as the 'id' property
+                match.id = doc.id
+                matches.add(match)
+            }
+        } catch (e: Exception) {
+            throw e
+        }
+        return matches
+    }
+
+    suspend fun getMatchById(matchId: String): Match? {
+        try {
+            val documentSnapshot = collectionRef.document(matchId).get().await()
+            if (documentSnapshot.exists()) {
+                val match = documentSnapshot.toObject(Match::class.java)
+                // Set the auto-generated document ID as the 'id' property
+                match?.id = documentSnapshot.id
+                return match
+            }
+        } catch (e: Exception) {
+            throw e
+        }
+        return null
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun getMatchesByDate(targetDate: LocalDate): List<Match> {
+        val matches = mutableListOf<Match>()
+        try {
+            val querySnapshot = collectionRef
+                .whereEqualTo("date", targetDate.toEpochDay())
+                .get()
+                .await()
+
+            for (doc in querySnapshot) {
+                val match = doc.toObject(Match::class.java)
+                // Set the auto-generated document ID as the 'id' property
+                match.id = doc.id
+                matches.add(match)
+            }
+        } catch (e: Exception) {
+            throw e
+        }
+        return matches
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun getMatchesByClub(
+        clubId: String,
+        isUpcoming: Boolean = false,
+        isPast: Boolean = false
+    ): List<Match> {
+        val matches = mutableListOf<Match>()
+        try {
+            val currentDate = LocalDate.now()
+            val bookings = bookingRepository.getAllBookingsByClub(clubId)
+
+            val matchingBookings = when {
+                isUpcoming -> bookings.filter { it.date >= currentDate.toEpochDay() }
+                isPast -> bookings.filter { it.date < currentDate.toEpochDay() }
+                else -> bookings
+            }
+
+            val matchingMatchIds = matchingBookings.map { it.matchId }
+
+            val querySnapshot = collectionRef
+                .whereIn("id", matchingMatchIds)
+                .orderBy("date")
+                .get()
+                .await()
+
+            for (doc in querySnapshot) {
+                val match = doc.toObject(Match::class.java)
+                // Set the auto-generated document ID as the 'id' property
+                match.id = doc.id
+                matches.add(match)
+            }
+        } catch (e: Exception) {
+            throw e
+        }
+        return matches
+    }
+
+    suspend fun getMatchesByOrganizer(userId: String): List<Match> {
+        val matches = mutableListOf<Match>()
+        try {
+            val querySnapshot = collectionRef
+                .whereEqualTo("organizerId", userId)
+                .orderBy("date", Query.Direction.DESCENDING)
+                .get()
+                .await()
+
+            for (doc in querySnapshot) {
+                val match = doc.toObject(Match::class.java)
+                // Set the auto-generated document ID as the 'id' property
+                match.id = doc.id
+                matches.add(match)
+            }
+        } catch (e: Exception) {
+            throw e
+        }
+        return matches
     }
 }
