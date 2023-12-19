@@ -5,6 +5,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import edu.ap.padelpal.models.MatchTypes
 import edu.ap.padelpal.models.GenderPreferences
+import edu.ap.padelpal.models.User
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
@@ -16,13 +17,12 @@ class MatchRepository {
 
     @SuppressLint("NewApi")
     suspend fun createMatch(
-        userId: String,
         clubId: String,
         date: LocalDate,
         startTime: LocalTime,
         durationMinutes: Int,
         title: String,
-        playerIds: List<String>,
+        players: List<User>,
         organizerId: String,
         amountOfPlayers: Int,
         matchType: MatchTypes,
@@ -32,6 +32,13 @@ class MatchRepository {
         try {
             val dateLong = date.toEpochDay()
             val timeLong = startTime.toSecondOfDay().toLong()
+            val playerIds = mutableListOf<String>()
+
+            players.forEach { p ->
+                if(p.id.isNotBlank()){
+                    playerIds.add(p.id)
+                }
+            }
 
             val matchMap = mapOf(
                 "date" to dateLong,
@@ -51,7 +58,7 @@ class MatchRepository {
             try{
                 bookingRepository.createBooking(
                     clubId = clubId,
-                    userId = userId,
+                    userId = organizerId,
                     matchId = matchDocRef.id,
                     date = date,
                     startTime = startTime,
@@ -66,5 +73,9 @@ class MatchRepository {
         } catch (e: Exception) {
             throw e
         }
+    }
+
+    suspend fun getAllMatches(isUpcoming: Boolean = false, isPast: Boolean = false) {
+
     }
 }

@@ -102,10 +102,11 @@ fun NewMatchScreen(userData: UserData?, navController: NavController) {
 
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
     var showBottomSheet by remember { mutableStateOf(false) }
 
     var clubs by remember { mutableStateOf(emptyList<Club>()) }
-    var bookings by remember { mutableStateOf(emptyList<Booking>()) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     var title by remember { mutableStateOf<String?>(null) }
@@ -385,24 +386,32 @@ fun NewMatchScreen(userData: UserData?, navController: NavController) {
                 }
                 item {
                     Button(
-//                        onClick = {
-//                            if (userData != null && selectedTime != null && title != null && ) {
-//                                val matchResult =  scope.launch {
-//                                    matchRepository.createMatch(
-//
-//                                    )
-//                                }
-//                                if (!matchResult.isCancelled){
-//                                    Toast.makeText(context, "Match published", Toast.LENGTH_LONG).show()
-//                                    scope.launch {
-//                                        startTimes = getAvailableStartTimes(club, selectedDate)
-//                                    }
-//                                } else {
-//                                    Toast.makeText(context, "Try again later", Toast.LENGTH_LONG).show()
-//                                }
-//                            }
-//                        },
-                        onClick = {},
+                        onClick = {
+                            if (userData != null && selectedTime != null && title != null && selectedFriends.isNotEmpty()) {
+                                val matchResult =  scope.launch {
+                                    selectedClub?.let {
+                                        matchRepository.createMatch(
+                                            clubId = it.id,
+                                            date = selectedDate,
+                                            startTime = selectedTime!!,
+                                            durationMinutes = 90,
+                                            title = title!!,
+                                            players = selectedFriends,
+                                            organizerId = userData.userId,
+                                            amountOfPlayers = selectedMaxPlayers,
+                                            matchType = selectedTypeOfMatch,
+                                            isPrivate = isPrivate,
+                                            genderPreference = selectedGenderPreference
+                                        )
+                                    }
+                                }
+                                if (!matchResult.isCancelled){
+                                    Toast.makeText(context, "Match published", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, "Try again later", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth(),
                         enabled = (selectedTime != null) && selectedFriends.isNotEmpty() && (title != null)
