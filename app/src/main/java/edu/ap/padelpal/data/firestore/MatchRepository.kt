@@ -80,10 +80,11 @@ class MatchRepository {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun getAllMatches(isUpcoming: Boolean = false, isPast: Boolean = false): List<Match> {
         val matches = mutableListOf<Match>()
         try {
-            val currentTimestamp = System.currentTimeMillis()
+            val currentTimestamp = LocalDate.now().toEpochDay()
 
             val query = when {
                 isUpcoming -> {
@@ -97,7 +98,7 @@ class MatchRepository {
                         .orderBy("date", Query.Direction.DESCENDING)
                 }
                 else -> {
-                    collectionRef.orderBy("date")
+                    collectionRef.orderBy("date", Query.Direction.DESCENDING)
                 }
             }
 
