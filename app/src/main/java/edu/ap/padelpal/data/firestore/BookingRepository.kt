@@ -51,14 +51,14 @@ class BookingRepository {
     }
 
     @SuppressLint("NewApi")
-    suspend fun createBooking(clubId: String, userId: String, date: LocalDate, startTime: LocalTime, durationMinutes: Int): String {
+    suspend fun createBooking(clubId: String, userId: String, matchId: String, date: LocalDate, startTime: LocalTime, durationMinutes: Int): String {
         try {
             val dateLong = date.toEpochDay()
             val timeLong = startTime.toSecondOfDay().toLong()
 
             val bookingMap = mapOf(
                 "clubId" to clubId,
-                "matchId" to "fakeMatchId123",
+                "matchId" to matchId,
                 "userId" to userId,
                 "date" to dateLong,
                 "startTime" to timeLong,

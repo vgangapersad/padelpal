@@ -238,6 +238,7 @@ fun ClubDetailScreen(userData: UserData?, navController: NavController, clubId: 
                                     bookingRepository.createBooking(
                                         clubId = clubId,
                                         userId = userData.userId,
+                                        matchId = "test",
                                         date = selectedDate,
                                         startTime = selectedTime!!,
                                         durationMinutes = 90

@@ -1,13 +1,20 @@
 package edu.ap.padelpal.ui.matches
 
+import android.os.Build
+import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -17,90 +24,126 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import edu.ap.padelpal.data.firestore.BookingRepository
+import edu.ap.padelpal.data.firestore.ClubRepository
+import edu.ap.padelpal.data.firestore.MatchRepository
+import edu.ap.padelpal.data.firestore.UserRepository
+import edu.ap.padelpal.models.Booking
+import edu.ap.padelpal.models.Club
+import edu.ap.padelpal.models.GenderPreferences
+import edu.ap.padelpal.models.MatchTypes
+import edu.ap.padelpal.models.StartTime
+import edu.ap.padelpal.models.User
+import edu.ap.padelpal.presentation.sign_in.UserData
+import edu.ap.padelpal.ui.components.BookCourtModalBottomSheet
+import edu.ap.padelpal.ui.components.IndeterminateCircularIndicator
+import edu.ap.padelpal.utilities.formatDateForDisplay
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalTime
 
-
-val clubs = listOf(
-    "Not set",
-    "Soccer Strikers",
-    "Basketball Blazers",
-    "Tennis Titans",
-    "Volleyball Vipers",
-    "Golf Gladiators",
-)
-data class Friend(val name: String, val photo: String)
-
-val friends = listOf(
-        Friend("Sarah","https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cGVyc29ufGVufDB8fDB8fHww"),
-        Friend("Zeynep", "https://www.verywellmind.com/thmb/pwEmuUJ6KO9OF8jeiQCDyKnaVQI=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-1187609003-73c8baf32a6a46a6b84fe931e0c51e7e.jpg"),
-        Friend("Zahraa", "https://images.squarespace-cdn.com/content/v1/51f6d482e4b08b0bde0f6d65/1622602815444-DHNPWK4EPWEY5VQA18F3/self_worth_2.jpg"),
-    )
-
-
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewMatchScreen(navController: NavController) {
-    val snackbarHostState = remember { SnackbarHostState() }
-    var title by remember { mutableStateOf("") }
-    var expanded by remember { mutableStateOf(false) }
-    var selectedClub by remember { mutableStateOf(clubs[0]) }
-    var isFocused by remember { mutableStateOf(false) }
+fun NewMatchScreen(userData: UserData?, navController: NavController) {
+    val matchRepository = MatchRepository()
+    val clubRepository = ClubRepository()
+    val userRepository = UserRepository()
 
-    var selectedMatchOfType by remember { mutableStateOf("Competitive") }
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    var showBottomSheet by remember { mutableStateOf(false) }
+
+    var clubs by remember { mutableStateOf(emptyList<Club>()) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    var title by remember { mutableStateOf<String?>(null) }
+    var selectedClub by remember { mutableStateOf<Club?>(null) }
+    var selectedGenderPreference by remember { mutableStateOf(GenderPreferences.all) }
+    var isFocused by remember { mutableStateOf(false) }
+    var friends by remember { mutableStateOf(emptyList<User>()) }
+    var selectedTypeOfMatch by remember { mutableStateOf(MatchTypes.friendly) }
     var selectedMaxPlayers by remember { mutableStateOf(2) }
-    var selectedFriends by remember { mutableStateOf<List<Friend>>(listOf()) }
+    var selectedFriends by remember { mutableStateOf<List<User>>(listOf()) }
     var showFriendSelectionDialog by remember { mutableStateOf(false) }
-    var currentFriendToModify by remember { mutableStateOf<Friend?>(null) }
+    var currentFriendToModify by remember { mutableStateOf<User?>(null) }
     var showModifyFriendDialog by remember { mutableStateOf(false) }
-    var isChecked by remember { mutableStateOf(false) }
+    var isPrivate by remember { mutableStateOf(false) }
+
+    var selectedDate by remember {
+        mutableStateOf<LocalDate>(LocalDate.now())
+    }
+    var selectedTime by remember {
+        mutableStateOf<LocalTime?>(null)
+    }
 
     fun onAddFriend() {
         showFriendSelectionDialog = true
     }
 
-    fun onModifyFriend(friend: Friend) {
+    fun onModifyFriend(friend: User) {
         currentFriendToModify = friend
         showModifyFriendDialog = true
     }
 
+    LaunchedEffect(key1 = clubs, key2 = friends) {
+        clubs = clubRepository.getAllClubs()
+        selectedClub = clubs[0]
 
+        friends = userRepository.getAllUsers()
+    }
 
     Scaffold(
         snackbarHost = {
@@ -125,155 +168,264 @@ fun NewMatchScreen(navController: NavController) {
 
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 24.dp)
+                .fillMaxSize()
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            if (!(clubs.isEmpty() || friends.isEmpty())) {
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("An awesome match title") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 15.dp)
-            )
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded },
-                modifier = Modifier
-                    .border(
-                        1.dp,
-                        if (isFocused) MaterialTheme.colorScheme.primary else Color.Gray,
-                        RoundedCornerShape(4.dp)
+                    OutlinedTextField(
+                        value = if (title != null) title.toString() else "",
+                        onValueChange = { title = it },
+                        label = { Text("An awesome match title") },
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            imeAction = ImeAction.Done,
+                            autoCorrect = true,
+                            capitalization = KeyboardCapitalization.Sentences
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 15.dp)
                     )
 
-            ) {
-                TextField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
-                        .onFocusChanged { focusState -> isFocused = focusState.isFocused }
-                        .border(1.dp, Color.Gray, RoundedCornerShape(4.dp)),
-                    readOnly = true,
-                    value = selectedClub,
-                    onValueChange = {},
-                    label = { Text("Club") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    colors = TextFieldDefaults.textFieldColors(
-                        containerColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent
-                    ),
-                )
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                ) {
-                    clubs.forEach { club ->
-                        DropdownMenuItem(
-                            text = { Text(club) },
-                            onClick = {
-                                selectedClub = club
-                                expanded = false
+                    var genderExpanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = genderExpanded,
+                        onExpandedChange = { genderExpanded = !genderExpanded },
+                        modifier = Modifier
+                            .border(
+                                1.dp,
+                                if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                                RoundedCornerShape(4.dp)
+                            )
+
+                    ) {
+                        TextField(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                                .onFocusChanged { focusState -> isFocused = focusState.isFocused }
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.secondary,
+                                    RoundedCornerShape(4.dp)
+                                ),
+                            readOnly = true,
+                            value = selectedGenderPreference.name.capitalize(),
+                            onValueChange = {},
+                            label = { Text("Gender preference") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderExpanded) },
+                            colors = TextFieldDefaults.textFieldColors(
+                                containerColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent
+                            ),
+                        )
+                        ExposedDropdownMenu(
+                            expanded = genderExpanded,
+                            onDismissRequest = { genderExpanded = false },
+                        ) {
+                            GenderPreferences.entries.forEach { preference ->
+                                DropdownMenuItem(
+                                    text = { Text(preference.name.capitalize()) },
+                                    onClick = {
+                                        selectedGenderPreference = preference
+                                        genderExpanded = false
+                                    },
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(35.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CheckboxMaxPlayers(
+                            selectedMaxPlayers = selectedMaxPlayers,
+                            onSelectMaxPlayers = { newSelection ->
+                                selectedMaxPlayers = newSelection
                             },
+                            number1 = 2,
+                            number2 = 4
                         )
                     }
-                }
-            }
-            Spacer(modifier = Modifier.height(35.dp))
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CheckboxMaxPlayers(
-                    selectedMaxPlayers = selectedMaxPlayers,
-                    onSelectMaxPlayers = { newSelection ->
-                        selectedMaxPlayers = newSelection
-                    },
-                    number1 = 2,
-                    number2 = 4
-                )
-            }
+                    Spacer(modifier = Modifier.height(20.dp))
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-
-
-            Row(
-                horizontalArrangement = Arrangement.Start,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                for (i in 0 until selectedMaxPlayers) {
-                    PlayerCircle(
-                        friend = selectedFriends.getOrNull(i),
-                        onCircleClicked = { friend ->
-                            if (friend == null) {
-                                onAddFriend()
-                            } else {
-                                onModifyFriend(friend)
-                            }
-                        },
-                        onRemoveOrReplace = { friend ->
-                            onModifyFriend(friend)
+                    Row(
+                        horizontalArrangement = Arrangement.Start,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        for (i in 0 until selectedMaxPlayers) {
+                            PlayerCircle(
+                                friend = selectedFriends.getOrNull(i),
+                                onCircleClicked = { friend ->
+                                    if (friend == null) {
+                                        onAddFriend()
+                                    } else {
+                                        onModifyFriend(friend)
+                                    }
+                                },
+                                onRemoveOrReplace = { friend: User ->
+                                    onModifyFriend(friend)
+                                }
+                            )
                         }
+                    }
+                    if (showFriendSelectionDialog) {
+                        FriendSelectionDialog(
+                            friendList = friends.filter { it !in selectedFriends },
+                            onFriendSelected = { selectedFriend ->
+                                selectedFriends = selectedFriends + selectedFriend
+                                showFriendSelectionDialog = false
+                            },
+                            onDismissRequest = {
+                                showFriendSelectionDialog = false
+                            }
+                        )
+                    }
+                    if (showModifyFriendDialog && currentFriendToModify != null) {
+                        ModifyFriendDialog(
+                            friend = currentFriendToModify!!,
+                            onRemove = {
+                                selectedFriends =
+                                    selectedFriends.filter { it != currentFriendToModify }
+                                showModifyFriendDialog = false
+                                currentFriendToModify = null
+                            },
+                            onDismissRequest = {
+                                showModifyFriendDialog = false
+                                currentFriendToModify = null
+                            }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(35.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Type of match: ",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier
+                        )
+                        Spacer(modifier = Modifier.width(15.dp))
+
+                        Checkbox(
+                            selectedOption = selectedTypeOfMatch,
+                            onOptionSelected = { selectedTypeOfMatch = it }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
+                    PrivateMatchSwitch(
+                        isChecked = isPrivate,
+                        onCheckedChange = { isPrivate = it }
                     )
                 }
-            }
-            if (showFriendSelectionDialog) {
-                FriendSelectionDialog(
-                    friendList = friends.filter { it !in selectedFriends },
-                    onFriendSelected = { selectedFriend ->
-                        selectedFriends = selectedFriends + selectedFriend
-                        showFriendSelectionDialog = false
-                    },
-                    onDismissRequest = {
-                        showFriendSelectionDialog = false
+                item {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    if(selectedTime != null){
+                        Text(
+                            text = "Court will be booked for this match: ",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier
+                        )
+                        selectedClub?.let {
+                            ClubCard(
+                            club = it,
+                            onClick = {scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) {
+                                    showBottomSheet = true
+                                }
+                            }},
+                                    date = selectedDate,
+                                    time = selectedTime!!
+                            )
+                        }
                     }
-                )
-            }
-            if (showModifyFriendDialog && currentFriendToModify != null) {
-                ModifyFriendDialog(
-                    friend = currentFriendToModify!!,
-                    onRemove = {
-                        selectedFriends = selectedFriends.filter { it != currentFriendToModify }
-                        showModifyFriendDialog = false
-                        currentFriendToModify = null
-                    },
-                    onDismissRequest = {
-                        showModifyFriendDialog = false
-                        currentFriendToModify = null
+                    Spacer(modifier = Modifier.height(0.dp))
+                    OutlinedButton(
+                        onClick = {
+                            showBottomSheet = true
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    )
+                    {
+                        Text(if(selectedTime == null) "Book a court" else "Edit booking")
                     }
-                )
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
+                item {
+                    if (showBottomSheet) {
+                        selectedClub?.let {
+                            BookCourtModalBottomSheet(
+                                onShowBottomSheet = {s -> showBottomSheet = s},
+                                sheetState = sheetState,
+                                scope = scope,
+                                isFocused = isFocused,
+                                onIsFocused = {o -> isFocused = o},
+                                selectedClub = it,
+                                onSelectedClub = {o -> selectedClub = o},
+                                clubs = clubs,
+                                selectedDate = selectedDate,
+                                selectedTime = selectedTime,
+                                onSelectedDate = {o -> selectedDate = o},
+                                onSelectedTime = {o -> selectedTime = o},
+                            )
+                        }
+                    }
+                }
+                item {
+                    Button(
+                        onClick = {
+                            if (userData != null && selectedTime != null && title != null && selectedFriends.isNotEmpty()) {
+                                val matchResult =  scope.launch {
+                                    selectedClub?.let {
+                                        matchRepository.createMatch(
+                                            clubId = it.id,
+                                            date = selectedDate,
+                                            startTime = selectedTime!!,
+                                            durationMinutes = 90,
+                                            title = title!!,
+                                            players = selectedFriends,
+                                            organizerId = userData.userId,
+                                            amountOfPlayers = selectedMaxPlayers,
+                                            matchType = selectedTypeOfMatch,
+                                            isPrivate = isPrivate,
+                                            genderPreference = selectedGenderPreference
+                                        )
+                                    }
+                                }
+                                if (!matchResult.isCancelled){
+                                    Toast.makeText(context, "Match published", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, "Try again later", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        enabled = (selectedTime != null) && selectedFriends.isNotEmpty() && (title != null)
+                    )
+                    {
+                        Text("Publish match")
+                    }
+                    Spacer(modifier = Modifier.height(100.dp))
+                }
+            } else {
+                item {
+                    IndeterminateCircularIndicator(label = "Loading the best options")
+                }
             }
-            Spacer(modifier = Modifier.height(35 .dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Type of match: ",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier
-                )
-                Spacer(modifier = Modifier.width(15.dp))
-
-                Checkbox(
-                    selectedOption = selectedMatchOfType,
-                    onOptionSelected = { selectedMatchOfType = it }
-                )
-            }
-            Spacer(modifier = Modifier.height(20 .dp))
-            PrivateMatchSwitch(
-                isChecked = isChecked,
-                onCheckedChange = { isChecked = it }
-            )
-
         }
     }
 }
@@ -308,11 +460,13 @@ fun CheckboxMaxPlayers(
             Text("$number2 players", fontSize = 12.sp)
         }
     }
-}@Composable
+}
+
+@Composable
 fun PlayerCircle(
-    friend: Friend?,
-    onCircleClicked: (Friend?) -> Unit,
-    onRemoveOrReplace: (Friend) -> Unit
+    friend: User?,
+    onCircleClicked: (User?) -> Unit,
+    onRemoveOrReplace: (User) -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.Start,
@@ -328,8 +482,8 @@ fun PlayerCircle(
         ) {
             if (friend != null) {
                 AsyncImage(
-                    model =friend.photo,
-                    contentDescription = friend.name,
+                    model = friend.profilePictureUrl,
+                    contentDescription = friend.displayName,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.size(60.dp)
                 )
@@ -340,10 +494,14 @@ fun PlayerCircle(
                         .background(Color.Transparent)
                 )
             } else {
-                Icon(Icons.Filled.Add, contentDescription = "Add friend", tint = MaterialTheme.colorScheme.onPrimary)
+                Icon(
+                    Icons.Filled.Add,
+                    contentDescription = "Add friend",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }
-        friend?.name?.let {
+        friend?.displayName?.let {
             Text(
                 text = it,
                 fontSize = 14.sp,
@@ -355,14 +513,14 @@ fun PlayerCircle(
 
 @Composable
 fun FriendSelectionDialog(
-    friendList: List<Friend>,
-    onFriendSelected: (Friend) -> Unit,
+    friendList: List<User>,
+    onFriendSelected: (User) -> Unit,
     onDismissRequest: () -> Unit
 ) {
     if (friendList.isNotEmpty()) {
         AlertDialog(
             onDismissRequest = onDismissRequest,
-            title = { Text("Select a Friend") },
+            title = { Text("Select a player") },
             text = {
                 LazyColumn {
                     items(friendList) { friend ->
@@ -383,8 +541,8 @@ fun FriendSelectionDialog(
 
 @Composable
 fun FriendItem(
-    friend: Friend,
-    onFriendSelected: (Friend) -> Unit
+    friend: User,
+    onFriendSelected: (User) -> Unit
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -394,30 +552,31 @@ fun FriendItem(
             .padding(8.dp)
     ) {
         AsyncImage(
-            model = friend.photo,
-            contentDescription = friend.name,
+            model = friend.profilePictureUrl,
+            contentDescription = friend.displayName,
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape),
         )
         Spacer(modifier = Modifier.width(18.dp))
-        Text(friend.name, style = MaterialTheme.typography.bodyLarge)
+        Text(friend.displayName, style = MaterialTheme.typography.bodyLarge)
     }
 }
+
 @Composable
 fun ModifyFriendDialog(
-    friend: Friend,
+    friend: User,
     onRemove: () -> Unit,
     onDismissRequest: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        title = { Text("Modify Friend") },
+        title = { Text("Modify player") },
         text = {
             Column {
                 Text(
-                    text = "Are you sure you want to remove ${friend.name}?",
+                    text = "Are you sure you want to remove ${friend.displayName}?",
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -438,34 +597,32 @@ fun ModifyFriendDialog(
 }
 
 
-
 @Composable
-fun Checkbox(selectedOption: String, onOptionSelected: (String) -> Unit) {
+fun Checkbox(selectedOption: MatchTypes, onOptionSelected: (MatchTypes) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.End
     ) {
         Button(
-            onClick = { onOptionSelected("Competitive") },
+            onClick = { onOptionSelected(MatchTypes.friendly) },
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (selectedOption == "Competitive") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
-            ),
-        ) {
-            Text("Competitive", fontSize = 12.sp)
-        }
-        Spacer(modifier = Modifier.width(8.dp))
-        Button(
-            onClick = { onOptionSelected("Friendly") },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (selectedOption == "Friendly") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                containerColor = if (selectedOption == MatchTypes.friendly) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
             ),
         ) {
             Text("Friendly", fontSize = 12.sp)
         }
+        Spacer(modifier = Modifier.width(8.dp))
+        Button(
+            onClick = { onOptionSelected(MatchTypes.competitive) },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (selectedOption == MatchTypes.competitive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+            ),
+        ) {
+            Text("Competitive", fontSize = 12.sp)
+        }
     }
 }
-
 
 
 @Composable
@@ -484,5 +641,66 @@ fun PrivateMatchSwitch(isChecked: Boolean, onCheckedChange: (Boolean) -> Unit) {
             checked = isChecked,
             onCheckedChange = onCheckedChange,
         )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun ClubCard(club: Club, onClick: () -> Unit, date: LocalDate, time: LocalTime) {
+    val address = club.location.address + ", " + club.location.city
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(PaddingValues(vertical = 15.dp))
+            .clickable(onClick = onClick)
+            .border(
+                0.5.dp,
+                MaterialTheme.colorScheme.outline,
+                shape = MaterialTheme.shapes.medium
+            ),
+    ) {
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(0.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(start = 35.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    "At ${club.name}",
+                    style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.primary)
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+                Text(
+                    "${formatDateForDisplay(date)} ${time} - ${time.plusMinutes(90)}",
+                    style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.secondary)
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+                Text(
+                    address,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+            AsyncImage(
+                model = club.imageUrl,
+                contentDescription = club.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .height(100.dp)
+                    .width(120.dp)
+            )
+        }
     }
 }

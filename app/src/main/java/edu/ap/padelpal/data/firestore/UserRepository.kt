@@ -17,12 +17,12 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 class UserRepository {
+    val db = Firebase.firestore
+    val collectionRef = db.collection("users");
 
     suspend fun getUserFromFirestore(uid: String): User? {
         return try {
-            val db = Firebase.firestore
-            val userDocument = db.collection("users").document(uid).get().await()
-
+            val userDocument = collectionRef.document(uid).get().await()
             if (userDocument.exists()) {
                 val preferencesMap = userDocument.get("preferences") as? Map<String, String>
                 val preferences = Preferences(
@@ -47,8 +47,42 @@ class UserRepository {
                 null
             }
         } catch (e: Exception) {
-            // Handle exception
-            null
+            throw e
+        }
+    }
+
+    suspend fun getAllUsers(): List<User> {
+        return try {
+            val users = mutableListOf<User>()
+
+            val usersSnapshot = collectionRef.get().await()
+            for (userDocument in usersSnapshot) {
+                val preferencesMap = userDocument.get("preferences") as? Map<String, String>
+                val preferences = Preferences(
+                    location = LocationPreference.valueOf(preferencesMap?.get("location") ?: "notSet"),
+                    bestHand = HandPreference.valueOf(preferencesMap?.get("bestHand") ?: "notSet"),
+                    courtPosition = CourtPositionPreference.valueOf(preferencesMap?.get("courtPosition") ?: "notSet"),
+                    matchType = MatchTypePreference.valueOf(preferencesMap?.get("matchType") ?: "notSet"),
+                    preferredTime = TimePreference.valueOf(preferencesMap?.get("preferredTime") ?: "notSet")
+                )
+
+                val user = User(
+                    id = userDocument.getString("id") ?: "",
+                    username = userDocument.getString("username") ?: "",
+                    displayName = userDocument.getString("displayName") ?: "",
+                    profilePictureUrl = userDocument.getString("profilePictureUrl") ?: "",
+                    preferences = preferences,
+                    matchesWon = userDocument.getLong("matchesWon")?.toInt() ?: 0,
+                    matchesPlayed = userDocument.getLong("matchesPlayed")?.toInt() ?: 0,
+                    level = userDocument.getLong("level")?.toInt() ?: 1
+                )
+
+                users.add(user)
+            }
+
+            users
+        } catch (e: Exception) {
+            throw e
         }
     }
 }
