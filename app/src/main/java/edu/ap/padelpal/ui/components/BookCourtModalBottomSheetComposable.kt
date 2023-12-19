@@ -91,7 +91,7 @@ fun BookCourtModalBottomSheet(
         sheetState = sheetState
     ) {
         LazyColumn(
-            modifier = Modifier.padding(PaddingValues(horizontal = 20.dp, vertical = 10.dp))
+            modifier = Modifier.padding(PaddingValues(horizontal = 15.dp, vertical = 10.dp))
         ) {
             item {
                 Text(

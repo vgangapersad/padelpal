@@ -3,10 +3,11 @@ package edu.ap.padelpal.ui.components
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
@@ -16,17 +17,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import java.text.SimpleDateFormat
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
-import java.time.Year
-import java.time.YearMonth
 import java.time.ZoneId
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,17 +35,19 @@ fun CourtDatePickerDialog(
     if (openDialog.value) {
         val datePickerState = rememberDatePickerState(
             selectableDates = object : SelectableDates {
-                // Blocks Sunday from being selected.
+                // Blocks past dates and Sundays from being selected.
                 @RequiresApi(Build.VERSION_CODES.O)
                 override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        val dayOfWeek = Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneId.of("UTC"))
-                            .toLocalDate().dayOfWeek
-                        dayOfWeek != DayOfWeek.SUNDAY
-                    } else {
-                        val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
-                        calendar.timeInMillis = utcTimeMillis
-                        calendar[Calendar.DAY_OF_WEEK] != Calendar.SUNDAY }
+                    // Get the current date at midnight
+                    val currentDate = LocalDate.now(ZoneId.of("UTC"))
+
+                    // Get the selected date
+                    val selectedDate = Instant.ofEpochMilli(utcTimeMillis)
+                        .atZone(ZoneId.of("UTC")).toLocalDate()
+
+                    // Check if the selected date is today or in the future and not a Sunday
+                    return (selectedDate.isEqual(currentDate) || selectedDate.isAfter(currentDate))
+                            && selectedDate.dayOfWeek != DayOfWeek.SUNDAY
                 }
 
                 // Allow date selection up to 6 months from today
@@ -59,6 +57,7 @@ fun CourtDatePickerDialog(
                 }
             }
         )
+
         val confirmEnabled = remember {
             derivedStateOf { datePickerState.selectedDateMillis != null }
         }
@@ -67,6 +66,7 @@ fun CourtDatePickerDialog(
             onDismissRequest = { onDismiss() },
             confirmButton = {
                 Button(
+                    modifier = Modifier.padding(PaddingValues(end = 10.dp, bottom = 10.dp)),
                     onClick = {
                         datePickerState.selectedDateMillis?.let { selectedDateMillis ->
                             onDateSelected(
@@ -81,9 +81,11 @@ fun CourtDatePickerDialog(
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    onDismiss()
-                }) {
+                TextButton(
+                    modifier = Modifier.padding(PaddingValues(bottom = 10.dp)),
+                    onClick = {
+                        onDismiss()
+                    }) {
                     Text(text = "Cancel")
                 }
             }
