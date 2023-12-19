@@ -1,6 +1,6 @@
 package edu.ap.padelpal.models
 
-data class MatchCardResponse(
+data class MatchDetailsResponse(
     val match: Match,
     val booking: Booking,
     val club: Club,

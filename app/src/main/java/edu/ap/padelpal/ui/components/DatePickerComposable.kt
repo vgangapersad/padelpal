@@ -38,10 +38,8 @@ fun CourtDatePickerDialog(
                 // Blocks past dates and Sundays from being selected.
                 @RequiresApi(Build.VERSION_CODES.O)
                 override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                    // Get the current date at midnight
                     val currentDate = LocalDate.now(ZoneId.of("UTC"))
 
-                    // Get the selected date
                     val selectedDate = Instant.ofEpochMilli(utcTimeMillis)
                         .atZone(ZoneId.of("UTC")).toLocalDate()
 

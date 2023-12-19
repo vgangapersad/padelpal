@@ -72,4 +72,19 @@ class BookingRepository {
             throw e
         }
     }
+    suspend fun getBookingByMatchId(matchId: String): Booking? {
+        try {
+            val querySnapshot = collectionRef.whereEqualTo("matchId", matchId).get().await()
+
+            if (!querySnapshot.isEmpty) {
+                val bookingDoc = querySnapshot.documents.first()
+                val booking = bookingDoc.toObject(Booking::class.java)
+                booking?.id = bookingDoc.id
+                return booking
+            }
+        } catch (e: Exception) {
+            throw e
+        }
+        return null
+    }
 }
