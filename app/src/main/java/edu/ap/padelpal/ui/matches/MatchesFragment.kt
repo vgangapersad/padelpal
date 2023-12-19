@@ -1,16 +1,9 @@
-
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,7 +27,6 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -65,159 +57,44 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.text.capitalize
+import androidx.compose.ui.text.intl.Locale
 import androidx.navigation.NavController
+import edu.ap.padelpal.models.MatchDetailsResponse
+import edu.ap.padelpal.ui.components.IndeterminateCircularIndicator
+import edu.ap.padelpal.utilities.DisplayMatchUtils
+import edu.ap.padelpal.utilities.formatDateForDisplay
+import kotlinx.coroutines.delay
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-
-
-data class PadelTournament(
-    val id: String,
-    val title: String,
-    val maxPlayers: Int,
-    val playersJoined: Int,
-    val gameType: String,
-    val date: String,
-    val time: String,
-    val location: String,
-    val participated:Boolean
-)
-
-val tournaments = listOf(
-    PadelTournament(
-        id = "1",
-        title = "Spring Padel Open",
-        maxPlayers = 4,
-        playersJoined = 2,
-        gameType = "Mixed",
-        date = "2023-04-10",
-        time = "10:00",
-        location = "Padel Park A",
-        participated = true
-    ),
-    PadelTournament(
-        id = "2",
-        title = "Summer Slam",
-        maxPlayers = 4,
-        playersJoined = 2,
-        gameType = "Men Only",
-        date = "2024-06-15",
-        time = "15:00",
-        location = "City Padel Club",
-        participated = false
-
-    ),
-    PadelTournament(
-        id = "3",
-        title = "Women's Padel Challenge",
-        maxPlayers = 4,
-        playersJoined = 1,
-        gameType = "Women Only",
-        date = "2024-07-20",
-        time = "09:00",
-        location = "Beachside Padel",
-        participated = false
-    ),
-    PadelTournament(
-        id = "4",
-        title = "Autumn Padel Fest",
-        maxPlayers = 2,
-        playersJoined = 1,
-        gameType = "Mixed",
-        date = "2023-10-05",
-        time = "14:00",
-        location = "Mountain View Padel",
-        participated = false
-    ),
-    PadelTournament(
-        id = "5",
-        title = "Winter Padel Gala",
-        maxPlayers = 4,
-        playersJoined = 2,
-        gameType = "Mixed",
-        date = "2024-12-10",
-        time = "18:00",
-        location = "Downtown Padel Arena",
-        participated = false
-    ),
-    PadelTournament(
-        id = "6",
-        title = "Pro Padel League",
-        maxPlayers = 4,
-        playersJoined = 1,
-        gameType = "Men Only",
-        date = "2024-05-22",
-        time = "17:00",
-        location = "Pro Padel Court",
-        participated = false
-    ),
-    PadelTournament(
-        id = "7",
-        title = "Junior Padel Tournament",
-        maxPlayers = 4,
-        playersJoined = 1,
-        gameType = "Mixed",
-        date = "2023-08-15",
-        time = "10:00",
-        location = "Suburban Padel Club",
-        participated = false
-    ),
-    PadelTournament(
-        id = "8",
-        title = "Senior Padel Championship",
-        maxPlayers = 4,
-        playersJoined = 1,
-        gameType = "Mixed",
-        date = "2024-09-07",
-        time = "16:00",
-        location = "Central Padel Courts",
-        participated = false
-
-    ),
-    PadelTournament(
-        id = "9",
-        title = "Holiday Padel Bash",
-        maxPlayers = 4,
-        playersJoined = 3,
-        gameType = "Women Only",
-        date = "2023-11-30",
-        time = "20:00",
-        location = "Riverside Padel" ,
-        participated = false
-    ),
-    PadelTournament(
-        id = "10",
-        title = "End of Year Padel Showdown",
-        maxPlayers = 4,
-        playersJoined = 2,
-        gameType = "Mixed",
-        date = "2024-12-28",
-        time = "13:00",
-        location = "Highland Padel Complex",
-        participated = false
-    )
-)
-
-
-
+import java.time.LocalTime
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MatchesScreen(navController: NavController) {
+    val matchUtils = DisplayMatchUtils()
+    val scope = rememberCoroutineScope()
+
     val tabTitles = listOf("Upcoming", "Past")
     var selectedTabIndex by remember { mutableStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
     var isExtended by remember { mutableStateOf(true) }
     val listState = rememberLazyListState()
+
+    var pastMatches by remember {
+        mutableStateOf<List<MatchDetailsResponse>>(emptyList())
+    }
+
+    var upcomingMatches by remember {
+        mutableStateOf<List<MatchDetailsResponse>>(emptyList())
+    }
 
     LaunchedEffect(listState) {
         snapshotFlow { listState.firstVisibleItemScrollOffset }
@@ -226,11 +103,13 @@ fun MatchesScreen(navController: NavController) {
             }
     }
 
+    LaunchedEffect(key1 = pastMatches, key2 = upcomingMatches) {
+        upcomingMatches = matchUtils.getMatchesWithDetails(true, false)
+        pastMatches = matchUtils.getMatchesWithDetails(false, true)
+    }
+
     val buttonWidth = animateDpAsState(
-        targetValue = if (isExtended) 100.dp else 56.dp,
-        animationSpec = keyframes {
-            durationMillis = 500
-        }, label = ""
+        targetValue = if (isExtended) 150.dp else 60.dp, label = "",
     )
 
     Scaffold(
@@ -275,8 +154,8 @@ fun MatchesScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(10.dp))
 
                 when (tabTitles[selectedTabIndex]) {
-                    "Upcoming" -> UpcomingContent(searchQuery, listState)
-                    "Past" -> PastContent(searchQuery, listState)
+                    "Upcoming" -> UpcomingContent(upcomingMatches, listState)
+                    "Past" -> PastContent(pastMatches, listState)
                 }
 
             }
@@ -290,7 +169,7 @@ fun MatchesScreen(navController: NavController) {
                         visible = isExtended,
                         enter = fadeIn() + expandHorizontally(),
                     ) {
-                        Text("Add")
+                        Text("New match", modifier = Modifier.align(Alignment.Center))
                     }
                 },
                 modifier = Modifier
@@ -309,70 +188,91 @@ fun MatchesScreen(navController: NavController) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun UpcomingContent(searchQuery: String, listState: LazyListState) {
-    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val currentDate = LocalDate.now()
+fun UpcomingContent(upcomingMatches: List<MatchDetailsResponse>, listState: LazyListState) {
+    var done by remember { mutableStateOf(false) }
 
-    val filteredUpcomingTournaments = tournaments.filter {
-        val tournamentDate = LocalDate.parse(it.date, dateFormatter)
-        tournamentDate.isAfter(currentDate) &&
-                (it.title.contains(searchQuery, ignoreCase = true) ||
-                        it.gameType.contains(searchQuery, ignoreCase = true) ||
-                        it.date.contains(searchQuery, ignoreCase = true) ||
-                        it.time.contains(searchQuery, ignoreCase = true) ||
-                        it.location.contains(searchQuery, ignoreCase = true))
+    LaunchedEffect(key1 = done) {
+        delay(5000)
+        done = true
     }
-        .sortedBy { LocalDate.parse(it.date, dateFormatter) }
 
-    LazyColumn(state = listState) {
-        items(filteredUpcomingTournaments) { tournament ->
-            MatchCard(tournament)
+    if (upcomingMatches.isNotEmpty()) {
+        LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+            items(upcomingMatches) { match ->
+                MatchCard(match)
+            }
+            item {
+                Spacer(modifier = Modifier.height(150.dp))
+            }
         }
+    } else {
+        if(done){
+            Box(modifier = Modifier.fillMaxSize()) {
+                Row(modifier = Modifier.align(Alignment.Center)) {
+                    Text(text = "Nothing here yet")
+                }
+            }
+        } else {
+            IndeterminateCircularIndicator(label = "Loading upcoming matches")
+        }
+        Spacer(modifier = Modifier.height(50.dp))
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun PastContent(searchQuery: String, listState: LazyListState) {
+fun PastContent(pastMatches: List<MatchDetailsResponse>, listState: LazyListState) {
+    var done by remember { mutableStateOf(false) }
 
-    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val currentDate = LocalDate.now()
-
-    val filteredPastTournaments = tournaments.filter {
-        val tournamentDate = LocalDate.parse(it.date, dateFormatter)
-        tournamentDate.isBefore(currentDate) &&
-                (it.title.contains(searchQuery, ignoreCase = true) ||
-                        it.gameType.contains(searchQuery, ignoreCase = true) ||
-                        it.date.contains(searchQuery, ignoreCase = true) ||
-                        it.time.contains(searchQuery, ignoreCase = true) ||
-                        it.location.contains(searchQuery, ignoreCase = true))
+    LaunchedEffect(key1 = done) {
+        delay(5000)
+        done = true
     }
 
-    LazyColumn(state = listState) {
-        items(filteredPastTournaments) { tournament ->
-            MatchCard(tournament)
+    if(pastMatches.isNotEmpty()) {
+        LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+            items(pastMatches) { match ->
+                MatchCard(match)
+            }
+            item {
+                Spacer(modifier = Modifier.height(150.dp))
+            }
         }
+    } else {
+        if(done){
+            Box(modifier = Modifier.fillMaxSize()) {
+                Row(modifier = Modifier.align(Alignment.Center)) {
+                    Text(text = "Nothing here yet")
+                }
+            }
+        } else {
+            IndeterminateCircularIndicator(label = "Loading past matches")
+        }
+        Spacer(modifier = Modifier.height(50.dp))
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MatchCard(tournament: PadelTournament) {
-    Card(
+fun MatchCard(match: MatchDetailsResponse) {
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 8.dp, bottom = 8.dp, start = 12.dp, end = 12.dp),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(8.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 6.dp
+        ),
     ) {
         Box(modifier = Modifier.height(220.dp)) {
             AsyncImage(
-                model = "https://img.redbull.com/images/c_crop,x_1295,y_0,h_2487,w_1989/c_fill,w_400,h_500/q_auto:low,f_auto/redbullcom/2022/4/1/hrxm462vtwdfpqvf4rdh/alejandro-galan-padel-action",
-                contentDescription = tournament.title,
+                model = match.club.imageUrl,
+                contentDescription = match.match.title,
                 modifier = Modifier
                     .fillMaxSize()
                     .blur(
-                        radiusX = 8.dp,
-                        radiusY = 8.dp,
+                        radiusX = 4.dp,
+                        radiusY = 4.dp,
                         edgeTreatment = BlurredEdgeTreatment(RoundedCornerShape(8.dp))
                     ),
 
@@ -382,7 +282,7 @@ fun MatchCard(tournament: PadelTournament) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.4f))
+                    .background(MaterialTheme.colorScheme.surfaceDim.copy(alpha = 0.4f))
             )
             Column(
                 modifier = Modifier
@@ -391,23 +291,27 @@ fun MatchCard(tournament: PadelTournament) {
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = tournament.title,
+                    text = match.match.title,
                     style = MaterialTheme.typography.headlineSmall.copy(color = Color.White),
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row {
-                    InformationCard("${tournament.playersJoined}/${tournament.maxPlayers}")
+                    InformationCard("${match.match.playerIds.size}/${match.match.amountOfPlayers}")
                     Spacer(modifier = Modifier.width(8.dp))
-                    InformationCard(tournament.gameType)
+                    InformationCard(match.match.matchType.name.capitalize(Locale("EN")))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    InformationCard(match.match.genderPreference.name.capitalize(Locale("EN")))
                 }
                 Spacer(modifier = Modifier.height(25.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val startTime = LocalTime.ofSecondOfDay(match.booking.startTime)
+                    val timeslot = "${startTime} - ${startTime.plusMinutes(match.booking.durationMinutes.toLong())}"
                     Icon(Icons.Default.DateRange, contentDescription = "Date", tint = Color.White, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(15.dp))
-                    Text(text = "${tournament.date} - ${tournament.time}", style = MaterialTheme.typography.bodyMedium, color = Color.White)
+                    Text(text = "${formatDateForDisplay(LocalDate.ofEpochDay(match.booking.date))}  $timeslot", style = MaterialTheme.typography.bodyMedium, color = Color.White)
                 }
                 Spacer(modifier = Modifier.height(5.dp))
 
@@ -416,7 +320,7 @@ fun MatchCard(tournament: PadelTournament) {
                 ) {
                     Icon(Icons.Default.LocationOn, contentDescription = "Location", tint = Color.White, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(15.dp))
-                    Text(text = tournament.location, style = MaterialTheme.typography.bodyMedium, color = Color.White)
+                    Text(text = "${match.club.name} (${match.club.location.city})", style = MaterialTheme.typography.bodyMedium, color = Color.White)
                 }
 
                 Button(
@@ -438,10 +342,10 @@ fun MatchCard(tournament: PadelTournament) {
 fun InformationCard(text: String) {
     Row(modifier = Modifier
         .clip(RoundedCornerShape(20))
-        .background(Color.White)
+        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
         .padding(horizontal = 8.dp, vertical = 6.dp)
     ) {
-        Text(text = text, color = Color.Black, style = MaterialTheme.typography.labelSmall)
+        Text(text = text, color = MaterialTheme.colorScheme.inverseOnSurface, style = MaterialTheme.typography.labelSmall)
     }
 }
 
