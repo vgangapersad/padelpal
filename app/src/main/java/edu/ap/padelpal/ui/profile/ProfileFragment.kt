@@ -83,7 +83,7 @@ fun ProfileScreen(
         done = true
     }
 
-    LaunchedEffect(key1 = userData?.userId) {
+    LaunchedEffect(key1 = userData?.userId, key2 = matches) {
         if (userData != null) {
             coroutineScope.launch {
                 val fetchedUser = userRepository.getUserFromFirestore(userData.userId)
@@ -135,7 +135,7 @@ fun ProfileScreen(
                 items(matches) { match ->
                     if (userData != null) {
                         PersonalMatchCard(userData, match, onClick = {
-                            navController.navigate("MatchDetail/${match.match.id}")
+                            navController.navigate("MatchDetail/${match.match.id},Profile")
                         })
                     }
                 }

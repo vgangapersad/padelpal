@@ -205,7 +205,7 @@ fun UpcomingContent(userData: UserData?, upcomingMatches: List<MatchDetailsRespo
             items(upcomingMatches) { match ->
                 if (userData != null) {
                     MatchCard(userData, match, onClick = {
-                        navController.navigate("MatchDetail/${match.match.id}")
+                        navController.navigate("MatchDetail/${match.match.id},Matches")
                     })
                 }
             }

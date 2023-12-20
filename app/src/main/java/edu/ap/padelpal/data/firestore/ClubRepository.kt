@@ -28,14 +28,16 @@ class ClubRepository {
     }
 
     suspend fun getClub(id: String): Club {
-        val club: Club
-        try {
-            val querySnapshot = collectionRef.document(id).get().await()
-                club = querySnapshot.toObject(Club::class.java)!!
+        var club = Club()
+        if(id.isNotBlank()){
+            try {
+                val documentSnapshot = collectionRef.document(id).get().await()
+                club = documentSnapshot.toObject(Club::class.java)!!
                 // Set the auto-generated document ID as the 'id' property
-                club.id = querySnapshot.id
+                club.id = documentSnapshot.id
             } catch (e: Exception) {
-            throw e
+                throw e
+            }
         }
         return club
     }
