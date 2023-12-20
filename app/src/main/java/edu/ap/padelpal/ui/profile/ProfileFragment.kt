@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,13 +48,16 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import edu.ap.padelpal.data.firestore.UserRepository
 import edu.ap.padelpal.models.MatchDetailsResponse
+import edu.ap.padelpal.models.MatchTypes
 import edu.ap.padelpal.models.User
 import edu.ap.padelpal.presentation.sign_in.UserData
 import edu.ap.padelpal.ui.components.IndeterminateCircularIndicator
+import edu.ap.padelpal.ui.components.MatchFilterChip
 import edu.ap.padelpal.ui.components.PersonalMatchCard
 import edu.ap.padelpal.utilities.MatchUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,6 +81,34 @@ fun ProfileScreen(
     }
 
     var done by remember { mutableStateOf(false) }
+    var isUpcoming by remember { mutableStateOf(false) }
+    var isPrivate by remember { mutableStateOf(false) }
+    var isOrganized by remember { mutableStateOf(false) }
+    var isCompetitive by remember { mutableStateOf(false) }
+    var isFriendly by remember { mutableStateOf(false) }
+
+    val filteredMatches by remember(
+        matches,
+        isUpcoming,
+        isPrivate,
+        isOrganized,
+        isCompetitive,
+        isFriendly
+    ) {
+        mutableStateOf(
+            user?.let {
+                filterMatches(
+                    matches,
+                    isUpcoming,
+                    isPrivate,
+                    isOrganized,
+                    isCompetitive,
+                    isFriendly,
+                    it.id
+                )
+            }
+        )
+    }
 
     LaunchedEffect(key1 = done) {
         delay(5000)
@@ -131,8 +163,45 @@ fun ProfileScreen(
                 ProfileInformation(userData = userData, user = user, navController = navController)
                 Spacer(modifier = Modifier.height(20.dp))
             }
-            if (matches.isNotEmpty()) {
-                items(matches) { match ->
+            if (filteredMatches?.isNotEmpty() == true) {
+                item {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        item {
+                            MatchFilterChip(
+                                text = "upcoming",
+                                selected = isUpcoming,
+                                isSelected = { i -> isUpcoming = i })
+                        }
+                        item {
+                            MatchFilterChip(
+                                text = "private",
+                                selected = isPrivate,
+                                isSelected = { i -> isPrivate = i })
+                        }
+                        item {
+                            MatchFilterChip(
+                                text = "organized",
+                                selected = isOrganized,
+                                isSelected = { i -> isOrganized = i })
+                        }
+                        item {
+                            MatchFilterChip(
+                                text = "competitive",
+                                selected = isCompetitive,
+                                isSelected = { i -> isCompetitive = i })
+                        }
+                        item {
+                            MatchFilterChip(
+                                text = "friendly",
+                                selected = isFriendly,
+                                isSelected = { i -> isFriendly = i })
+                        }
+
+                    }
+                }
+                items(filteredMatches!!) { match ->
                     if (userData != null) {
                         PersonalMatchCard(userData, match, onClick = {
                             navController.navigate("MatchDetail/${match.match.id},Profile")
@@ -266,4 +335,42 @@ fun ProfileInformation(userData: UserData?, user: User?, navController: NavContr
             )
         }
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun filterMatches(
+    matches: List<MatchDetailsResponse>,
+    isUpcoming: Boolean,
+    isPrivate: Boolean,
+    isOrganized: Boolean,
+    isCompetitive: Boolean,
+    isFriendly: Boolean,
+    userId: String,
+): List<MatchDetailsResponse> {
+    var filteredMatches = matches
+
+    if (isUpcoming) {
+        filteredMatches =
+            filteredMatches.filter { match -> match.match.date >= LocalDate.now().toEpochDay() }
+    }
+
+    if (isPrivate) {
+        filteredMatches = filteredMatches.filter { match -> match.match.isPrivate }
+    }
+
+    if (isOrganized) {
+        filteredMatches = filteredMatches.filter { match -> match.match.organizerId == userId }
+    }
+
+    if (isCompetitive) {
+        filteredMatches =
+            filteredMatches.filter { match -> match.match.matchType == MatchTypes.competitive }
+    }
+
+    if (isFriendly) {
+        filteredMatches =
+            filteredMatches.filter { match -> match.match.matchType == MatchTypes.friendly }
+    }
+
+    return filteredMatches
 }
