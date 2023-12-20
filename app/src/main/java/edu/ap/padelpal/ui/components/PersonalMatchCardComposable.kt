@@ -4,6 +4,7 @@ import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,7 +55,7 @@ import java.time.LocalTime
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun PersonalMatchCard(user: UserData, match: MatchDetailsResponse) {
+fun PersonalMatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -> Unit) {
     val matchUtils = MatchUtils()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -73,7 +74,8 @@ fun PersonalMatchCard(user: UserData, match: MatchDetailsResponse) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 8.dp),
+            .padding(top = 8.dp, bottom = 8.dp)
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 6.dp

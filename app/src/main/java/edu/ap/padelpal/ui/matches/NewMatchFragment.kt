@@ -400,6 +400,7 @@ fun NewMatchScreen(userData: UserData?, navController: NavController) {
                                 }
                                 if (!matchResult.isCancelled){
                                     Toast.makeText(context, "Match published", Toast.LENGTH_LONG).show()
+                                    navController.navigate("Matches")
                                 } else {
                                     Toast.makeText(context, "Try again later", Toast.LENGTH_LONG).show()
                                 }
