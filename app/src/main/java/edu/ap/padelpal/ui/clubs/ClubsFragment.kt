@@ -71,7 +71,6 @@ fun ClubsScreen(navController: NavController) {
                 title = {
                     Text(
                         "Clubs",
-                            style = MaterialTheme.typography.headlineLarge,
                     )
                 },
                 scrollBehavior = scrollBehavior
