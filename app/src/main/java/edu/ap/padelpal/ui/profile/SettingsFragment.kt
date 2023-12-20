@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
@@ -35,11 +36,14 @@ import edu.ap.padelpal.models.CourtPositionPreference
 import edu.ap.padelpal.models.HandPreference
 import edu.ap.padelpal.models.LocationPreference
 import edu.ap.padelpal.models.MatchTypePreference
+import edu.ap.padelpal.models.Preferences
 import edu.ap.padelpal.models.TimePreference
 import edu.ap.padelpal.presentation.sign_in.UserData
+import edu.ap.padelpal.ui.components.IndeterminateCircularIndicator
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import okhttp3.internal.wait
+import java.util.Locale
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -100,115 +104,85 @@ fun SettingsContent(userData: UserData?) {
     var usernameState by remember { mutableStateOf(userData?.username ?: "") }
     val coroutineScope = rememberCoroutineScope()
     val userRepository = UserRepository()
-    var selectedLocation by remember { mutableStateOf(LocationPreference.antwerpen)}
+    var selectedPreferences: Preferences? by remember { mutableStateOf(null)}
 
-
-    // Fetch the display name from Firestore when the screen is created
     LaunchedEffect(key1 = userData?.userId) {
         if (userData != null) {
             coroutineScope.launch {
                 val user = userRepository.getUserFromFirestore(userData.userId)
                 usernameState = user?.displayName ?: ""
-                selectedLocation = user?.preferences?.location!!
+                selectedPreferences = user?.preferences
             }
         }
     }
 
-    var selectedBestHand by remember { mutableStateOf(HandPreference.leftHanded)}
-    var selectedCourtPosition by remember { mutableStateOf(CourtPositionPreference.bothSides)}
-    var selectedMatchType by remember { mutableStateOf(MatchTypePreference.friendly)}
-    var selectedPreferredTime by remember { mutableStateOf(TimePreference.morning)}
     var isFocused by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
 
-
-
     LazyColumn {
-        item {
-            ProfilePicture(userData)
-            OutlinedTextField(
-                value = if (usernameState != null) usernameState.toString() else "",
-                onValueChange = { usernameState = it },
-                label = { Text("Display Name") },
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Done,
-                    autoCorrect = true,
-                    capitalization = KeyboardCapitalization.Sentences
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 15.dp)
-            )
-        }
-
-        item {
-
-            Selection(
-                label = "Location",
-                selected = selectedLocation,
-                onSelectedChanged = { newValue ->
-                    selectedLocation = newValue
-                },
-                enumValues = LocationPreference.values(),
-            )
-
-            Spacer(modifier = Modifier.height(40.dp))
-        }
-        item {
-            val context = LocalContext.current
-            Button(
-                onClick = {
-                    if (userData != null) {
-                        coroutineScope.launch {
-                            saveDisplayNameToFirestore(userData.userId, usernameState, context)
-                            saveSelectionsToFirestore(
-                                userData.userId,
-                                selectedLocation,
-                                context)
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .height(48.dp)
-                    .fillMaxSize(),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Text("Save")
+        if (selectedPreferences != null) {
+            item {
+                ProfilePicture(userData)
+                OutlinedTextField(
+                    value = usernameState.toString(),
+                    onValueChange = { usernameState = it },
+                    label = { Text("Display Name") },
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Done,
+                        autoCorrect = true,
+                        capitalization = KeyboardCapitalization.Sentences
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 15.dp)
+                )
             }
-            Spacer(modifier = Modifier.height(100.dp))
+            item {
+
+                Selection(
+                    label = "Location",
+                    selected = selectedPreferences!!.location,
+                    onSelectedChanged = { newValue ->
+                        selectedPreferences = selectedPreferences!!.copy(location = newValue)
+                    },
+                    enumValues = LocationPreference.values(),
+                )
+
+                Spacer(modifier = Modifier.height(40.dp))
+            }
+            item {
+                val context = LocalContext.current
+                Button(
+                    onClick = {
+                        if (userData != null) {
+                            val result = coroutineScope.launch {
+                                userRepository.updateDisplayName(userData.userId, usernameState)
+                                userRepository.updatePreferences(userData.userId,
+                                    selectedPreferences!!
+                                )
+                            }
+                            if (!result.isCancelled){
+                                Toast.makeText(context, "Settings saved", Toast.LENGTH_LONG).show()
+                            } else {
+                                Toast.makeText(context, "Try again later", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .height(48.dp)
+                        .fillMaxSize(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Save")
+                }
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+        } else {
+            item {
+                IndeterminateCircularIndicator(label = "Loading your settings")
+            }
         }
-    }
-}
-
-
-// Function to save the display name to Firestore
-private suspend fun saveDisplayNameToFirestore(uid: String, displayName: String, context: Context) {
-    try {
-        val db = Firebase.firestore
-        val userDocument = db.collection("users").document(uid)
-
-        userDocument.update("displayName", displayName).await()
-        Toast.makeText(context, "Display Name Saved", Toast.LENGTH_SHORT).show()
-        // Handle success if needed
-    } catch (e: Exception) {
-        // Handle exception
-    }
-}
-private suspend fun saveSelectionsToFirestore(
-    uid: String,
-    selectedLocation: LocationPreference,
-    context: Context
-) {
-    try {
-        val db = Firebase.firestore
-        val userDocument = db.collection("users").document(uid)
-
-        userDocument.update(
-            "preferences.location", selectedLocation).await()
-        Toast.makeText(context, "Preferences Saved", Toast.LENGTH_SHORT).show()
-
-    } catch (e: Exception) {
     }
 }
 
@@ -262,7 +236,7 @@ fun <T: Enum<T>> Selection(
                 .onFocusChanged { focusState -> isFocused = focusState.isFocused }
                 .border(1.dp, Color.Gray, RoundedCornerShape(4.dp)),
             readOnly = true,
-            value = selected.name,
+            value = if (selected.name == "notSet") "Set your preference" else selected.name.capitalize(Locale("EN")),
             onValueChange = {},
             label = { Text(label) },
             trailingIcon = {
@@ -291,7 +265,7 @@ fun <T: Enum<T>> Selection(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
-            enumValues.forEach { preference  ->
+            enumValues.filter { p -> p.name != "notSet" }.forEach { preference  ->
                 DropdownMenuItem(
                     text = { Text(preference.name.capitalize()) },
                     onClick = {

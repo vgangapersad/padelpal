@@ -1,5 +1,7 @@
 package edu.ap.padelpal.data.firestore
 
+import android.content.Context
+import android.widget.Toast
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -81,6 +83,28 @@ class UserRepository {
             }
 
             users
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
+    suspend fun updateDisplayName(uid: String, displayName: String) {
+        try {
+            val userDocument = collectionRef.document(uid)
+            userDocument.update("displayName", displayName).await()
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+    suspend fun updatePreferences(
+        uid: String,
+        preferences: Preferences,
+    ) {
+        try {
+            val userDocument = collectionRef.document(uid)
+            userDocument.update(
+                "preferences", preferences).await()
+
         } catch (e: Exception) {
             throw e
         }

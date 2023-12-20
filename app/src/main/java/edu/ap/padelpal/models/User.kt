@@ -13,7 +13,7 @@ data class User(
 
 
 data class Preferences(
-    val location: LocationPreference = LocationPreference.notSet,
+    var location: LocationPreference = LocationPreference.notSet,
     val bestHand: HandPreference = HandPreference.notSet,
     val courtPosition: CourtPositionPreference = CourtPositionPreference.notSet,
     val matchType: MatchTypePreference = MatchTypePreference.notSet,
