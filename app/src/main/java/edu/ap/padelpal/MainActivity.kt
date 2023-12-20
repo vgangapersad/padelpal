@@ -226,15 +226,20 @@ class MainActivity : ComponentActivity() {
                                     NewMatchScreen(userData = googleAuthUiClient.getSignedInUser(), navController)
                                 }
                                 composable(
-                                    route = "MatchDetail/{matchId}",
+                                    route = "MatchDetail/{matchId},{navigateBackTo}",
                                     arguments = listOf(navArgument("matchId") { type = NavType.StringType })
                                 ) { backStackEntry ->
                                     val matchId = backStackEntry.arguments?.getString("matchId")
+                                    val navigateBackTo = backStackEntry.arguments?.getString("navigateBackTo")
                                     matchId?.let {
-                                        MatchDetailScreen(
-                                            userData = googleAuthUiClient.getSignedInUser(),
-                                            navController,
-                                            matchId = it)
+                                        if (navigateBackTo != null) {
+                                            MatchDetailScreen(
+                                                userData = googleAuthUiClient.getSignedInUser(),
+                                                navController,
+                                                matchId = it,
+                                                navigateBackTo
+                                            )
+                                        }
                                     }
                                 }
                                 composable(

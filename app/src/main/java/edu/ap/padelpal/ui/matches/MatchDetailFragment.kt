@@ -82,7 +82,7 @@ import kotlinx.coroutines.launch
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MatchDetailScreen(userData: UserData?, navController: NavController, matchId: String) {
+fun MatchDetailScreen(userData: UserData?, navController: NavController, matchId: String, navigateBackTo: String) {
     val matchUtils = MatchUtils()
     val userRepository = UserRepository()
     val scope = rememberCoroutineScope()
@@ -138,7 +138,7 @@ fun MatchDetailScreen(userData: UserData?, navController: NavController, matchId
                 ),
                 title = { Text("Match details") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { if(navigateBackTo.isNotBlank()) navController.navigate(navigateBackTo) else navController.navigateUp() }) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,
                             contentDescription = "Back"
