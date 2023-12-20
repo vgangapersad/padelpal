@@ -232,6 +232,7 @@ class MainActivity : ComponentActivity() {
                                     val matchId = backStackEntry.arguments?.getString("matchId")
                                     matchId?.let {
                                         MatchDetailScreen(
+                                            userData = googleAuthUiClient.getSignedInUser(),
                                             navController,
                                             matchId = it)
                                     }

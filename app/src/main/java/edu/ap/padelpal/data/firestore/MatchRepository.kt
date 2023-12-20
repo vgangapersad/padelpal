@@ -6,7 +6,6 @@ import androidx.annotation.RequiresApi
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import edu.ap.padelpal.models.Club
 import edu.ap.padelpal.models.MatchTypes
 import edu.ap.padelpal.models.GenderPreferences
 import edu.ap.padelpal.models.Match
@@ -14,6 +13,8 @@ import edu.ap.padelpal.models.User
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
+
+
 
 class MatchRepository {
     val db = Firebase.firestore
@@ -230,4 +231,19 @@ class MatchRepository {
         }
         return null
     }
+
+    suspend fun deleteMatchById(matchId: String, userId: String) {
+        try {
+            val documentSnapshot = collectionRef.document(matchId).get().await()
+            if (documentSnapshot.exists()) {
+                val match = documentSnapshot.toObject(Match::class.java)
+                if (match?.organizerId == userId) {
+                    collectionRef.document(matchId).delete()
+                }
+            }
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
 }
