@@ -201,7 +201,7 @@ class MatchRepository {
         return matches
     }
 
-    suspend fun getMatchesByOrganizer(userId: String): List<Match> {
+    suspend fun getJoinedMatchesByUser(userId: String): List<Match> {
         val matches = mutableListOf<Match>()
         try {
             val querySnapshot = collectionRef
@@ -215,6 +215,22 @@ class MatchRepository {
                 // Set the auto-generated document ID as the 'id' property
                 match.id = doc.id
                 matches.add(match)
+            }
+
+            val playerMatchesQuerySnapshot = collectionRef
+                .whereArrayContains("playerIds", userId)
+                .orderBy("date", Query.Direction.DESCENDING)
+                .get()
+                .await()
+
+            for (doc in playerMatchesQuerySnapshot) {
+                val match = doc.toObject(Match::class.java)
+                // Set the auto-generated document ID as the 'id' property
+                match.id = doc.id
+
+                if (!matches.contains(match)) {
+                    matches.add(match)
+                }
             }
         } catch (e: Exception) {
             throw e

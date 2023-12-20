@@ -72,6 +72,7 @@ import androidx.navigation.NavController
 import edu.ap.padelpal.models.MatchDetailsResponse
 import edu.ap.padelpal.presentation.sign_in.UserData
 import edu.ap.padelpal.ui.components.IndeterminateCircularIndicator
+import edu.ap.padelpal.ui.components.InformationChip
 import edu.ap.padelpal.utilities.MatchUtils
 import edu.ap.padelpal.utilities.formatDateForDisplay
 import kotlinx.coroutines.delay
@@ -127,7 +128,6 @@ fun MatchesScreen(userData: UserData?, navController: NavController) {
                 title = {
                     Text(
                         "Matches",
-                        style = MaterialTheme.typography.headlineLarge,
                     )
                 },
                 scrollBehavior = scrollBehavior
@@ -279,7 +279,7 @@ fun MatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -> Unit) 
         buttonText = "Organizer"
     } else {
         if (isJoined) {
-            buttonText = "Joined"
+            buttonText = "Leave"
         }
     }
     ElevatedCard(
@@ -325,11 +325,11 @@ fun MatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -> Unit) 
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row {
-                    InformationCard("${joinedPlayers}/${match.match.amountOfPlayers}")
+                    InformationChip("${joinedPlayers}/${match.match.amountOfPlayers}")
                     Spacer(modifier = Modifier.width(8.dp))
-                    InformationCard(match.match.matchType.name.capitalize(Locale("EN")))
+                    InformationChip(match.match.matchType.name.capitalize(Locale("EN")))
                     Spacer(modifier = Modifier.width(8.dp))
-                    InformationCard(match.match.genderPreference.name.capitalize(Locale("EN")))
+                    InformationChip(match.match.genderPreference.name.capitalize(Locale("EN")))
                 }
                 Spacer(modifier = Modifier.height(25.dp))
 
@@ -405,19 +405,6 @@ fun MatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -> Unit) 
         }
     }
 }
-
-
-@Composable
-fun InformationCard(text: String) {
-    Row(modifier = Modifier
-        .clip(RoundedCornerShape(20))
-        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-        .padding(horizontal = 8.dp, vertical = 6.dp)
-    ) {
-        Text(text = text, color = MaterialTheme.colorScheme.inverseOnSurface, style = MaterialTheme.typography.labelSmall)
-    }
-}
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
