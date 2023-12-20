@@ -9,8 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,15 +35,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
@@ -70,19 +65,17 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import edu.ap.padelpal.data.firestore.BookingRepository
 import edu.ap.padelpal.data.firestore.ClubRepository
 import edu.ap.padelpal.data.firestore.MatchRepository
 import edu.ap.padelpal.data.firestore.UserRepository
-import edu.ap.padelpal.models.Booking
 import edu.ap.padelpal.models.Club
 import edu.ap.padelpal.models.GenderPreferences
 import edu.ap.padelpal.models.MatchTypes
-import edu.ap.padelpal.models.StartTime
 import edu.ap.padelpal.models.User
 import edu.ap.padelpal.presentation.sign_in.UserData
 import edu.ap.padelpal.ui.components.BookCourtModalBottomSheet
@@ -407,6 +400,7 @@ fun NewMatchScreen(userData: UserData?, navController: NavController) {
                                 }
                                 if (!matchResult.isCancelled){
                                     Toast.makeText(context, "Match published", Toast.LENGTH_LONG).show()
+                                    navController.navigate("Matches")
                                 } else {
                                     Toast.makeText(context, "Try again later", Toast.LENGTH_LONG).show()
                                 }
@@ -505,7 +499,9 @@ fun PlayerCircle(
             Text(
                 text = it,
                 fontSize = 14.sp,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                textAlign = TextAlign.Center,
+                lineHeight = 15.sp,
+                modifier = Modifier.width(60.dp)
             )
         }
     }

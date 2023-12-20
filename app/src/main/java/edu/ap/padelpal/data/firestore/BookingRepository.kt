@@ -5,6 +5,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import edu.ap.padelpal.models.Booking
 import edu.ap.padelpal.models.Club
+import edu.ap.padelpal.models.Match
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
@@ -86,5 +87,15 @@ class BookingRepository {
             throw e
         }
         return null
+    }
+    suspend fun deleteBookingById(bookingId: String) {
+        try {
+            val documentSnapshot = collectionRef.document(bookingId).get().await()
+            if (documentSnapshot.exists()) {
+                    collectionRef.document(bookingId).delete()
+            }
+        } catch (e: Exception) {
+            throw e
+        }
     }
 }

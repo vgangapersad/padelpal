@@ -134,7 +134,9 @@ fun ProfileScreen(
             if (matches.isNotEmpty()) {
                 items(matches) { match ->
                     if (userData != null) {
-                        PersonalMatchCard(userData, match)
+                        PersonalMatchCard(userData, match, onClick = {
+                            navController.navigate("MatchDetail/${match.match.id}")
+                        })
                     }
                 }
             } else {
