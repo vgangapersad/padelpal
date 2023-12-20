@@ -97,6 +97,7 @@ fun MatchDetailScreen(userData: UserData?, navController: NavController, matchId
     val isOrganizer = match?.match?.organizerId == userData?.userId
     var isJoined: Boolean? by remember { mutableStateOf(null) }
     var joinedPlayers: Int? by remember { mutableStateOf(null) }
+    var isPrivate: Boolean? by remember { mutableStateOf(null) }
     var buttonText = "Join"
 
     if (isOrganizer) {
@@ -115,6 +116,7 @@ fun MatchDetailScreen(userData: UserData?, navController: NavController, matchId
                 user = match!!.match.organizerId.let { userRepository.getUserFromFirestore(it) }
             }
             joinedPlayers = match!!.match.playerIds.size
+            isPrivate = match!!.match.isPrivate
         }
         friends = userRepository.getAllUsers()
     }
@@ -212,7 +214,7 @@ fun MatchDetailScreen(userData: UserData?, navController: NavController, matchId
                                         )
                                     ), MaterialTheme.colorScheme.secondary
                                 )
-                                if (match.match.isPrivate) {
+                                if (isPrivate == true) {
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Row(
                                         modifier = Modifier
@@ -357,12 +359,10 @@ fun MatchDetailScreen(userData: UserData?, navController: NavController, matchId
                                     if (isJoined == true) {
                                         val result = scope.launch {
                                             match?.match?.let {
-                                                if (userData != null) {
-                                                    matchUtils.removePlayerByMatchId(
-                                                        it.id,
-                                                        userData.userId
-                                                    )
-                                                }
+                                                matchUtils.removePlayerByMatchId(
+                                                    it.id,
+                                                    userData.userId
+                                                )
                                             }
                                         }
                                         if (!result.isCancelled) {

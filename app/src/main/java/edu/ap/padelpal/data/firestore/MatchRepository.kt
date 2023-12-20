@@ -113,11 +113,13 @@ class MatchRepository {
                 if (isJoinable) {
                     if (match.amountOfPlayers > match.playerIds.size) {
                         match.id = doc.id
+                        match.isPrivate = doc.getBoolean("isPrivate") ?: false
                         matches.add(match)
                     }
                 } else {
                     if (match.amountOfPlayers == match.playerIds.size) {
                         match.id = doc.id
+                        match.isPrivate = doc.getBoolean("isPrivate") ?: false
                         matches.add(match)
                     }
                 }
@@ -135,6 +137,7 @@ class MatchRepository {
                 val match = documentSnapshot.toObject(Match::class.java)
                 // Set the auto-generated document ID as the 'id' property
                 match?.id = documentSnapshot.id
+                match?.isPrivate = documentSnapshot.getBoolean("isPrivate") ?: false
                 return match
             }
         } catch (e: Exception) {
@@ -156,6 +159,7 @@ class MatchRepository {
                 val match = doc.toObject(Match::class.java)
                 // Set the auto-generated document ID as the 'id' property
                 match.id = doc.id
+                match.isPrivate = doc.getBoolean("isPrivate") ?: false
                 matches.add(match)
             }
         } catch (e: Exception) {
@@ -193,6 +197,7 @@ class MatchRepository {
                 val match = doc.toObject(Match::class.java)
                 // Set the auto-generated document ID as the 'id' property
                 match.id = doc.id
+                match.isPrivate = doc.getBoolean("isPrivate") ?: false
                 matches.add(match)
             }
         } catch (e: Exception) {
@@ -214,6 +219,7 @@ class MatchRepository {
                 val match = doc.toObject(Match::class.java)
                 // Set the auto-generated document ID as the 'id' property
                 match.id = doc.id
+                match.isPrivate = doc.getBoolean("isPrivate") ?: false
                 matches.add(match)
             }
 
@@ -227,6 +233,7 @@ class MatchRepository {
                 val match = doc.toObject(Match::class.java)
                 // Set the auto-generated document ID as the 'id' property
                 match.id = doc.id
+                match.isPrivate = doc.getBoolean("isPrivate") ?: false
 
                 if (!matches.contains(match)) {
                     matches.add(match)

@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -118,6 +119,22 @@ fun PersonalMatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -
                     InformationChip(match.match.matchType.name.capitalize(Locale("EN")))
                     Spacer(modifier = Modifier.width(8.dp))
                     InformationChip(match.match.genderPreference.name.capitalize(Locale("EN")))
+                    if (match.match.isPrivate) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20))
+                                .background(MaterialTheme.colorScheme.secondary)
+                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Lock,
+                                contentDescription = "organizer",
+                                tint = MaterialTheme.colorScheme.onSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(25.dp))
 
