@@ -51,6 +51,7 @@ import edu.ap.padelpal.presentation.sign_in.GoogleAuthUIClient
 import edu.ap.padelpal.presentation.sign_in.SignInScreen
 import edu.ap.padelpal.presentation.sign_in.SignInViewModel
 import edu.ap.padelpal.ui.clubs.ClubsScreen
+import edu.ap.padelpal.ui.matches.MatchDetailScreen
 import edu.ap.padelpal.ui.matches.NewMatchScreen
 import edu.ap.padelpal.ui.profile.ProfileScreen
 import edu.ap.padelpal.ui.profile.SettingsScreen
@@ -225,6 +226,17 @@ class MainActivity : ComponentActivity() {
                                     NewMatchScreen(userData = googleAuthUiClient.getSignedInUser(), navController)
                                 }
                                 composable(
+                                    route = "MatchDetail/{matchId}",
+                                    arguments = listOf(navArgument("matchId") { type = NavType.StringType })
+                                ) { backStackEntry ->
+                                    val matchId = backStackEntry.arguments?.getString("matchId")
+                                    matchId?.let {
+                                        MatchDetailScreen(
+                                            navController,
+                                            matchId = it)
+                                    }
+                                }
+                                composable(
                                     route = "ClubDetail/{clubId}",
                                     arguments = listOf(navArgument("clubId") { type = NavType.StringType })
                                 ) { backStackEntry ->
@@ -236,6 +248,7 @@ class MainActivity : ComponentActivity() {
                                             clubId = it)
                                     }
                                 }
+
 
                                 composable("Settings") {
                                     SettingsScreen(

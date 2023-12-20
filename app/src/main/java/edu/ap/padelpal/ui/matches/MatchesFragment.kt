@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -157,8 +158,8 @@ fun MatchesScreen(userData: UserData?, navController: NavController) {
                 Spacer(modifier = Modifier.height(10.dp))
 
                 when (tabTitles[selectedTabIndex]) {
-                    "Upcoming" -> UpcomingContent(userData, upcomingMatches, listState)
-                    "Past" -> PastContent(userData, pastMatches, listState)
+                    "Upcoming" -> UpcomingContent(userData, upcomingMatches, listState, navController)
+                    "Past" -> PastContent(userData, pastMatches, listState, navController)
                 }
 
             }
@@ -191,7 +192,7 @@ fun MatchesScreen(userData: UserData?, navController: NavController) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun UpcomingContent(userData: UserData?, upcomingMatches: List<MatchDetailsResponse>, listState: LazyListState) {
+fun UpcomingContent(userData: UserData?, upcomingMatches: List<MatchDetailsResponse>, listState: LazyListState,navController: NavController) {
     var done by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = done) {
@@ -203,7 +204,9 @@ fun UpcomingContent(userData: UserData?, upcomingMatches: List<MatchDetailsRespo
         LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
             items(upcomingMatches) { match ->
                 if (userData != null) {
-                    MatchCard(userData, match)
+                    MatchCard(userData, match, onClick = {
+                        navController.navigate("MatchDetail/${match.match.id}")
+                    })
                 }
             }
             item {
@@ -226,7 +229,7 @@ fun UpcomingContent(userData: UserData?, upcomingMatches: List<MatchDetailsRespo
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun PastContent(userData: UserData?, pastMatches: List<MatchDetailsResponse>, listState: LazyListState) {
+fun PastContent(userData: UserData?, pastMatches: List<MatchDetailsResponse>, listState: LazyListState, navController: NavController) {
     var done by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = done) {
@@ -238,7 +241,9 @@ fun PastContent(userData: UserData?, pastMatches: List<MatchDetailsResponse>, li
         LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
             items(pastMatches) { match ->
                 if (userData != null) {
-                    MatchCard(userData, match)
+                    MatchCard(userData, match, onClick = {
+                        navController.navigate("MatchDetail/${match.match.id}")
+                    })
                 }
             }
             item {
@@ -261,7 +266,7 @@ fun PastContent(userData: UserData?, pastMatches: List<MatchDetailsResponse>, li
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MatchCard(user: UserData, match: MatchDetailsResponse) {
+fun MatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -> Unit) {
     val matchUtils = MatchUtils()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -280,11 +285,13 @@ fun MatchCard(user: UserData, match: MatchDetailsResponse) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 8.dp, start = 12.dp, end = 12.dp),
+            .padding(top = 8.dp, bottom = 8.dp, start = 12.dp, end = 12.dp)
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 6.dp
         ),
+
     ) {
         Box(modifier = Modifier.height(220.dp)) {
             AsyncImage(
