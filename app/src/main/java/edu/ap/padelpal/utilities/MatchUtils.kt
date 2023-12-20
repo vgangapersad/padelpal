@@ -10,11 +10,12 @@ import edu.ap.padelpal.models.Club
 import edu.ap.padelpal.models.MatchDetailsResponse
 import java.time.LocalDate
 
-class DisplayMatchUtils {
+class MatchUtils {
     val matchRepository = MatchRepository()
     val clubRepository = ClubRepository()
     val bookingRepository = BookingRepository()
 
+    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun getMatchesWithDetails(
         isUpcoming: Boolean = false,
         isPast: Boolean = false
@@ -76,5 +77,37 @@ class DisplayMatchUtils {
             MatchDetailsResponse(match, booking ?: Booking(), club)
         }
     }
+
+    suspend fun addPlayerByMatchId(matchId: String, playerId: String) {
+        val match = matchRepository.getMatchById(matchId)
+
+        if (match != null && match.amountOfPlayers > match.playerIds.size) {
+            val updatedPlayerIds = match.playerIds.toMutableList()
+            updatedPlayerIds.add(playerId)
+
+            try {
+                matchRepository.updateMatchPlayersById(matchId, updatedPlayerIds)
+            } catch (e: Exception) {
+                throw e
+            }
+        }
+    }
+
+    suspend fun removePlayerByMatchId(matchId: String, playerId: String) {
+        val match = matchRepository.getMatchById(matchId)
+
+        if (match != null && match.organizerId != playerId) {
+            val updatedPlayerIds = match.playerIds.toMutableList()
+            updatedPlayerIds.remove(playerId)
+
+            try {
+                matchRepository.updateMatchPlayersById(matchId, updatedPlayerIds)
+            } catch (e: Exception) {
+                throw e
+            }
+        }
+    }
+
+
 
 }

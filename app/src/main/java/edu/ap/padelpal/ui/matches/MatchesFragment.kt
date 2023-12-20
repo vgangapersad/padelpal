@@ -1,4 +1,5 @@
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
@@ -63,23 +64,25 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.intl.Locale
 import androidx.navigation.NavController
 import edu.ap.padelpal.models.MatchDetailsResponse
+import edu.ap.padelpal.presentation.sign_in.UserData
 import edu.ap.padelpal.ui.components.IndeterminateCircularIndicator
-import edu.ap.padelpal.utilities.DisplayMatchUtils
+import edu.ap.padelpal.utilities.MatchUtils
 import edu.ap.padelpal.utilities.formatDateForDisplay
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MatchesScreen(navController: NavController) {
-    val matchUtils = DisplayMatchUtils()
-    val scope = rememberCoroutineScope()
+fun MatchesScreen(userData: UserData?, navController: NavController) {
+    val matchUtils = MatchUtils()
 
     val tabTitles = listOf("Upcoming", "Past")
     var selectedTabIndex by remember { mutableStateOf(0) }
@@ -154,8 +157,8 @@ fun MatchesScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(10.dp))
 
                 when (tabTitles[selectedTabIndex]) {
-                    "Upcoming" -> UpcomingContent(upcomingMatches, listState)
-                    "Past" -> PastContent(pastMatches, listState)
+                    "Upcoming" -> UpcomingContent(userData, upcomingMatches, listState)
+                    "Past" -> PastContent(userData, pastMatches, listState)
                 }
 
             }
@@ -188,7 +191,7 @@ fun MatchesScreen(navController: NavController) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun UpcomingContent(upcomingMatches: List<MatchDetailsResponse>, listState: LazyListState) {
+fun UpcomingContent(userData: UserData?, upcomingMatches: List<MatchDetailsResponse>, listState: LazyListState) {
     var done by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = done) {
@@ -199,7 +202,9 @@ fun UpcomingContent(upcomingMatches: List<MatchDetailsResponse>, listState: Lazy
     if (upcomingMatches.isNotEmpty()) {
         LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
             items(upcomingMatches) { match ->
-                MatchCard(match)
+                if (userData != null) {
+                    MatchCard(userData, match)
+                }
             }
             item {
                 Spacer(modifier = Modifier.height(150.dp))
@@ -221,7 +226,7 @@ fun UpcomingContent(upcomingMatches: List<MatchDetailsResponse>, listState: Lazy
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun PastContent(pastMatches: List<MatchDetailsResponse>, listState: LazyListState) {
+fun PastContent(userData: UserData?, pastMatches: List<MatchDetailsResponse>, listState: LazyListState) {
     var done by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = done) {
@@ -232,7 +237,9 @@ fun PastContent(pastMatches: List<MatchDetailsResponse>, listState: LazyListStat
     if(pastMatches.isNotEmpty()) {
         LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
             items(pastMatches) { match ->
-                MatchCard(match)
+                if (userData != null) {
+                    MatchCard(userData, match)
+                }
             }
             item {
                 Spacer(modifier = Modifier.height(150.dp))
@@ -254,7 +261,22 @@ fun PastContent(pastMatches: List<MatchDetailsResponse>, listState: LazyListStat
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MatchCard(match: MatchDetailsResponse) {
+fun MatchCard(user: UserData, match: MatchDetailsResponse) {
+    val matchUtils = MatchUtils()
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val isOrganizer = match.match.organizerId == user.userId
+    var isJoined by remember { mutableStateOf(match.match.playerIds.contains(user.userId)) }
+    var joinedPlayers by remember { mutableStateOf(match.match.playerIds.size) }
+    var buttonText = "Join"
+
+    if (isOrganizer) {
+        buttonText = "Organizer"
+    } else {
+        if (isJoined) {
+            buttonText = "Joined"
+        }
+    }
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -296,7 +318,7 @@ fun MatchCard(match: MatchDetailsResponse) {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row {
-                    InformationCard("${match.match.playerIds.size}/${match.match.amountOfPlayers}")
+                    InformationCard("${joinedPlayers}/${match.match.amountOfPlayers}")
                     Spacer(modifier = Modifier.width(8.dp))
                     InformationCard(match.match.matchType.name.capitalize(Locale("EN")))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -324,12 +346,52 @@ fun MatchCard(match: MatchDetailsResponse) {
                 }
 
                 Button(
-                    onClick = { /* TODO: Handle click */ },
+                    onClick = {
+                        if(isOrganizer){
+                            Toast.makeText(context, "You organized this match", Toast.LENGTH_LONG).show()
+                        } else {
+                            if (isJoined) {
+                                val result = scope.launch {
+                                    matchUtils.removePlayerByMatchId(match.match.id, user.userId)
+                                }
+                                if (!result.isCancelled) {
+                                    isJoined = false
+                                    joinedPlayers -= 1
+                                    Toast.makeText(
+                                        context,
+                                        "You left ${match.match.title}",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                } else {
+                                    Toast.makeText(context, "Try again later", Toast.LENGTH_LONG)
+                                        .show()
+                                }
+                            } else {
+                                val result = scope.launch {
+                                    matchUtils.addPlayerByMatchId(match.match.id, user.userId)
+                                }
+                                if (!result.isCancelled) {
+                                    isJoined = true
+                                    joinedPlayers += 1
+                                    Toast.makeText(
+                                        context,
+                                        "You joined ${match.match.title}",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                } else {
+                                    Toast.makeText(context, "Try again later", Toast.LENGTH_LONG)
+                                        .show()
+                                }
+                            }
+                        }
+                    },
                     modifier = Modifier
                         .align(Alignment.End)
                         .clip(RoundedCornerShape(50)),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)){
-                    Text("Join", color = MaterialTheme.colorScheme.onPrimary
+                    Text(
+                        text = buttonText,
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
