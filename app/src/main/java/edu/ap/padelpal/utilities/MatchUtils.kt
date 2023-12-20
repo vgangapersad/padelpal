@@ -18,9 +18,11 @@ class MatchUtils {
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun getMatchesWithDetails(
         isUpcoming: Boolean = false,
-        isPast: Boolean = false
+        isPast: Boolean = false,
+        isPrivate: Boolean = false,
+        isJoinable: Boolean = true
     ): List<MatchDetailsResponse> {
-        val matches = matchRepository.getAllMatches(isUpcoming, isPast)
+        val matches = matchRepository.getAllMatches(isUpcoming, isPast, isPrivate, isJoinable)
         return matches.map { match ->
             val booking = bookingRepository.getBookingByMatchId(match.id ?: "")
             val club = clubRepository.getClub(booking?.clubId ?: "")
@@ -66,10 +68,10 @@ class MatchUtils {
         }
     }
 
-    suspend fun getMatchesWithDetailsByOrganizer(
+    suspend fun getJoinedMatchesWithDetailsByUser(
         userId: String,
     ): List<MatchDetailsResponse> {
-        val matches = matchRepository.getMatchesByOrganizer(userId)
+        val matches = matchRepository.getJoinedMatchesByUser(userId)
         return matches.map { match ->
             val booking = bookingRepository.getBookingByMatchId(match.id ?: "")
             val club = clubRepository.getClub(booking?.clubId ?: "")
