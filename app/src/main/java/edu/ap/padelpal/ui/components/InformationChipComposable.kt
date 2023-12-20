@@ -9,13 +9,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun InformationChip(text: String) {
+fun InformationChip(text: String, backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest) {
     Row(modifier = Modifier
         .clip(RoundedCornerShape(20))
-        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+        .background(backgroundColor)
         .padding(horizontal = 8.dp, vertical = 6.dp)
     ) {
         Text(text = text, color = MaterialTheme.colorScheme.inverseOnSurface, style = MaterialTheme.typography.labelSmall)
