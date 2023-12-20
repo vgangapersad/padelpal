@@ -219,7 +219,7 @@ class MainActivity : ComponentActivity() {
                                     ClubsScreen(navController)
                                 }
                                 composable("Matches") {
-                                    MatchesScreen(navController)
+                                    MatchesScreen(userData = googleAuthUiClient.getSignedInUser(), navController)
                                 }
                                 composable("NewMatch") {
                                     NewMatchScreen(userData = googleAuthUiClient.getSignedInUser(), navController)

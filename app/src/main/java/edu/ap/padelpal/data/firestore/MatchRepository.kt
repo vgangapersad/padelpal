@@ -81,7 +81,7 @@ class MatchRepository {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun getAllMatches(isUpcoming: Boolean = false, isPast: Boolean = false): List<Match> {
+    suspend fun getAllMatches(isUpcoming: Boolean = false, isPast: Boolean = false, isPrivate: Boolean = false, isJoinable: Boolean = true): List<Match> {
         val matches = mutableListOf<Match>()
         try {
             val currentTimestamp = LocalDate.now().toEpochDay()
@@ -90,15 +90,17 @@ class MatchRepository {
                 isUpcoming -> {
                     collectionRef
                         .whereGreaterThanOrEqualTo("date", currentTimestamp)
+                        .whereEqualTo("isPrivate", isPrivate)
                         .orderBy("date")
                 }
                 isPast -> {
                     collectionRef
                         .whereLessThan("date", currentTimestamp)
+                        .whereEqualTo("isPrivate", isPrivate)
                         .orderBy("date", Query.Direction.DESCENDING)
                 }
                 else -> {
-                    collectionRef.orderBy("date", Query.Direction.DESCENDING)
+                    collectionRef.whereEqualTo("isPrivate", isPrivate).orderBy("date", Query.Direction.DESCENDING)
                 }
             }
 
@@ -107,8 +109,17 @@ class MatchRepository {
             for (doc in querySnapshot) {
                 val match = doc.toObject(Match::class.java)
                 // Set the auto-generated document ID as the 'id' property
-                match.id = doc.id
-                matches.add(match)
+                if (isJoinable) {
+                    if (match.amountOfPlayers > match.playerIds.size) {
+                        match.id = doc.id
+                        matches.add(match)
+                    }
+                } else {
+                    if (match.amountOfPlayers == match.playerIds.size) {
+                        match.id = doc.id
+                        matches.add(match)
+                    }
+                }
             }
         } catch (e: Exception) {
             throw e
@@ -208,5 +219,15 @@ class MatchRepository {
             throw e
         }
         return matches
+    }
+
+    suspend fun updateMatchPlayersById(matchId: String, playerIds: List<String>): Match? {
+        val documentRef = collectionRef.document(matchId)
+        try {
+            documentRef.update("playerIds", playerIds).await()
+        } catch (e: Exception) {
+            throw e
+        }
+        return null
     }
 }
