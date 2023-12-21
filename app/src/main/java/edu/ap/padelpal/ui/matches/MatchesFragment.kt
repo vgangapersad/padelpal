@@ -250,7 +250,7 @@ fun UpcomingContent(
     var done by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = done) {
-        delay(5000)
+        delay(6000)
         done = true
     }
 
