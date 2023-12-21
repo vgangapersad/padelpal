@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -263,7 +264,7 @@ fun ProfileInformation(userData: UserData?, user: User?, navController: NavContr
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "Antwerpen - België",
+                    text = if (user != null) "${user.preferences.location.name.capitalize()} - Belgium" else "Belgium",
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
