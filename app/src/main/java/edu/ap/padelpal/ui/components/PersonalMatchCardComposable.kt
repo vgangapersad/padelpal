@@ -4,6 +4,7 @@ import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -54,7 +56,7 @@ import java.time.LocalTime
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun PersonalMatchCard(user: UserData, match: MatchDetailsResponse) {
+fun PersonalMatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -> Unit) {
     val matchUtils = MatchUtils()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -73,7 +75,8 @@ fun PersonalMatchCard(user: UserData, match: MatchDetailsResponse) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 8.dp),
+            .padding(top = 8.dp, bottom = 8.dp)
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 6.dp
@@ -116,6 +119,22 @@ fun PersonalMatchCard(user: UserData, match: MatchDetailsResponse) {
                     InformationChip(match.match.matchType.name.capitalize(Locale("EN")))
                     Spacer(modifier = Modifier.width(8.dp))
                     InformationChip(match.match.genderPreference.name.capitalize(Locale("EN")))
+                    if (match.match.isPrivate) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20))
+                                .background(MaterialTheme.colorScheme.secondary)
+                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Lock,
+                                contentDescription = "organizer",
+                                tint = MaterialTheme.colorScheme.onSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(25.dp))
 

@@ -8,11 +8,9 @@ data class Match(
     val organizerId: String = "",
     val amountOfPlayers: Int = 0,
     val matchType: MatchTypes = MatchTypes.friendly,
-    val isPrivate: Boolean = false,
+    var isPrivate: Boolean = false,
     val genderPreference: GenderPreferences = GenderPreferences.all
-) {
-    constructor() : this("", "", 0, emptyList(), "", 0, MatchTypes.friendly, false, GenderPreferences.all)
-}
+)
 
 enum class MatchTypes {
     competitive,

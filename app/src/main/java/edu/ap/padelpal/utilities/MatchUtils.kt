@@ -110,6 +110,19 @@ class MatchUtils {
         }
     }
 
-
-
+    suspend fun deleteMatchAndBooking(match: MatchDetailsResponse, userId: String){
+       val foundMatch = getMatchWithDetails(match.match.id)
+        if (foundMatch != null) {
+            if (foundMatch.equals(match)) {
+                if (match.match.organizerId == userId) {
+                    try {
+                        bookingRepository.deleteBookingById(match.booking.id)
+                        matchRepository.deleteMatchById(match.match.id, userId)
+                    } catch (e: Exception) {
+                        throw e
+                    }
+                }
+            }
+        }
+    }
 }

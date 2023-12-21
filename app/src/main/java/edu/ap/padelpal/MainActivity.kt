@@ -51,6 +51,7 @@ import edu.ap.padelpal.presentation.sign_in.GoogleAuthUIClient
 import edu.ap.padelpal.presentation.sign_in.SignInScreen
 import edu.ap.padelpal.presentation.sign_in.SignInViewModel
 import edu.ap.padelpal.ui.clubs.ClubsScreen
+import edu.ap.padelpal.ui.matches.MatchDetailScreen
 import edu.ap.padelpal.ui.matches.NewMatchScreen
 import edu.ap.padelpal.ui.profile.ProfileScreen
 import edu.ap.padelpal.ui.profile.SettingsScreen
@@ -225,6 +226,23 @@ class MainActivity : ComponentActivity() {
                                     NewMatchScreen(userData = googleAuthUiClient.getSignedInUser(), navController)
                                 }
                                 composable(
+                                    route = "MatchDetail/{matchId},{navigateBackTo}",
+                                    arguments = listOf(navArgument("matchId") { type = NavType.StringType })
+                                ) { backStackEntry ->
+                                    val matchId = backStackEntry.arguments?.getString("matchId")
+                                    val navigateBackTo = backStackEntry.arguments?.getString("navigateBackTo")
+                                    matchId?.let {
+                                        if (navigateBackTo != null) {
+                                            MatchDetailScreen(
+                                                userData = googleAuthUiClient.getSignedInUser(),
+                                                navController,
+                                                matchId = it,
+                                                navigateBackTo
+                                            )
+                                        }
+                                    }
+                                }
+                                composable(
                                     route = "ClubDetail/{clubId}",
                                     arguments = listOf(navArgument("clubId") { type = NavType.StringType })
                                 ) { backStackEntry ->
@@ -236,6 +254,7 @@ class MainActivity : ComponentActivity() {
                                             clubId = it)
                                     }
                                 }
+
 
                                 composable("Settings") {
                                     SettingsScreen(
