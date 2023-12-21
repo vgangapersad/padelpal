@@ -19,7 +19,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -31,6 +34,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -45,10 +49,13 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
@@ -57,22 +64,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import edu.ap.padelpal.data.firestore.UserRepository
 import edu.ap.padelpal.models.MatchDetailsResponse
+import edu.ap.padelpal.models.MatchTypes
+import edu.ap.padelpal.models.User
 import edu.ap.padelpal.presentation.sign_in.UserData
 import edu.ap.padelpal.ui.components.IndeterminateCircularIndicator
 import edu.ap.padelpal.ui.components.InformationChip
+import edu.ap.padelpal.ui.components.MatchFilterChip
 import edu.ap.padelpal.utilities.MatchUtils
 import edu.ap.padelpal.utilities.formatDateForDisplay
 import kotlinx.coroutines.delay
@@ -85,13 +90,18 @@ import java.time.LocalTime
 @Composable
 fun MatchesScreen(userData: UserData?, navController: NavController) {
     val matchUtils = MatchUtils()
+    val scope = rememberCoroutineScope()
+    val userRepository = UserRepository()
 
-    val tabTitles = listOf("Upcoming", "Past")
+    val tabTitles = listOf("Upcoming", "History")
     var selectedTabIndex by remember { mutableStateOf(0) }
-    var searchQuery by remember { mutableStateOf("") }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
     var isExtended by remember { mutableStateOf(true) }
     val listState = rememberLazyListState()
+
+    var isCompetitive by remember { mutableStateOf(false) }
+    var isFriendly by remember { mutableStateOf(false) }
+    var isLocation by remember { mutableStateOf(true) }
 
     var pastMatches by remember {
         mutableStateOf<List<MatchDetailsResponse>>(emptyList())
@@ -101,16 +111,26 @@ fun MatchesScreen(userData: UserData?, navController: NavController) {
         mutableStateOf<List<MatchDetailsResponse>>(emptyList())
     }
 
+    var user by remember(userData?.userId) {
+        mutableStateOf<User?>(null)
+    }
+
     LaunchedEffect(listState) {
-        snapshotFlow { listState.firstVisibleItemScrollOffset }
-            .collect { offset ->
-                isExtended = offset == 0
-            }
+        snapshotFlow { listState.firstVisibleItemScrollOffset }.collect { offset ->
+            isExtended = offset == 0
+        }
     }
 
     LaunchedEffect(key1 = pastMatches, key2 = upcomingMatches) {
         upcomingMatches = matchUtils.getMatchesWithDetails(true, false)
+            .filter { m -> m.match.organizerId != userData?.userId }
         pastMatches = matchUtils.getMatchesWithDetails(false, true)
+
+        if (userData != null) {
+            scope.launch {
+                user = userRepository.getUserFromFirestore(userData.userId)
+            }
+        }
     }
 
     val buttonWidth = animateDpAsState(
@@ -124,13 +144,11 @@ fun MatchesScreen(userData: UserData?, navController: NavController) {
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     titleContentColor = MaterialTheme.colorScheme.onBackground,
-                ),
-                title = {
+                ), title = {
                     Text(
                         "Matches",
                     )
-                },
-                scrollBehavior = scrollBehavior
+                }, scrollBehavior = scrollBehavior
             )
         },
 
@@ -140,26 +158,53 @@ fun MatchesScreen(userData: UserData?, navController: NavController) {
                 modifier = Modifier
                     .padding(innerPadding)
                     .padding(horizontal = 8.dp)
-                    .padding(top = 8.dp)
             ) {
                 TabRow(
                     selectedTabIndex = selectedTabIndex
                 ) {
                     tabTitles.forEachIndexed { index, title ->
-                        Tab(
-                            selected = index == selectedTabIndex,
+                        Tab(selected = index == selectedTabIndex,
                             onClick = { selectedTabIndex = index },
-                            text = { Text(text = title) }
-                        )
+                            text = { Text(text = title) })
                     }
                 }
                 Spacer(modifier = Modifier.height(10.dp))
-                SearchBar(state = searchQuery, onValueChange = { searchQuery = it })
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                ) {
+                    if (user != null) {
+                        item {
+                            user?.preferences?.location?.name?.let {
+                                MatchFilterChip(
+                                    text = it.capitalize(),
+                                    selected = isLocation,
+                                    isSelected = { i -> isLocation = i })
+                            }
+                        }
+                    }
+                    item {
+                        MatchFilterChip(
+                            text = "competitive",
+                            selected = isCompetitive,
+                            isSelected = { i -> isCompetitive = i })
+                    }
+                    item {
+                        MatchFilterChip(
+                            text = "friendly",
+                            selected = isFriendly,
+                            isSelected = { i -> isFriendly = i })
+                    }
+
+                }
                 Spacer(modifier = Modifier.height(10.dp))
 
                 when (tabTitles[selectedTabIndex]) {
-                    "Upcoming" -> UpcomingContent(userData, upcomingMatches, listState, navController)
-                    "Past" -> PastContent(userData, pastMatches, listState, navController)
+                    "Upcoming" -> UpcomingContent(
+                        userData, upcomingMatches, listState, navController
+                    )
+
+                    "History" -> PastContent(userData, pastMatches, listState, navController)
                 }
 
             }
@@ -192,7 +237,12 @@ fun MatchesScreen(userData: UserData?, navController: NavController) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun UpcomingContent(userData: UserData?, upcomingMatches: List<MatchDetailsResponse>, listState: LazyListState,navController: NavController) {
+fun UpcomingContent(
+    userData: UserData?,
+    upcomingMatches: List<MatchDetailsResponse>,
+    listState: LazyListState,
+    navController: NavController
+) {
     var done by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = done) {
@@ -200,8 +250,8 @@ fun UpcomingContent(userData: UserData?, upcomingMatches: List<MatchDetailsRespo
         done = true
     }
 
-    if (upcomingMatches.isNotEmpty()) {
-        LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+    LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+        if (upcomingMatches.isNotEmpty()) {
             items(upcomingMatches) { match ->
                 if (userData != null) {
                     MatchCard(userData, match, onClick = {
@@ -212,24 +262,31 @@ fun UpcomingContent(userData: UserData?, upcomingMatches: List<MatchDetailsRespo
             item {
                 Spacer(modifier = Modifier.height(150.dp))
             }
-        }
-    } else {
-        if(done){
-            Box(modifier = Modifier.fillMaxSize()) {
-                Row(modifier = Modifier.align(Alignment.Center)) {
-                    Text(text = "Nothing here yet")
-                }
-            }
         } else {
-            IndeterminateCircularIndicator(label = "Loading upcoming matches")
+            item {
+                if (done) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Row(modifier = Modifier.align(Alignment.Center)) {
+                            Text(text = "Nothing here yet")
+                        }
+                    }
+                } else {
+                    IndeterminateCircularIndicator(label = "Loading upcoming matches")
+                }
+                Spacer(modifier = Modifier.height(50.dp))
+            }
         }
-        Spacer(modifier = Modifier.height(50.dp))
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun PastContent(userData: UserData?, pastMatches: List<MatchDetailsResponse>, listState: LazyListState, navController: NavController) {
+fun PastContent(
+    userData: UserData?,
+    pastMatches: List<MatchDetailsResponse>,
+    listState: LazyListState,
+    navController: NavController
+) {
     var done by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = done) {
@@ -237,30 +294,32 @@ fun PastContent(userData: UserData?, pastMatches: List<MatchDetailsResponse>, li
         done = true
     }
 
-    if(pastMatches.isNotEmpty()) {
-        LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+    LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+        if (pastMatches.isNotEmpty()) {
             items(pastMatches) { match ->
                 if (userData != null) {
                     MatchCard(userData, match, onClick = {
-                        navController.navigate("MatchDetail/${match.match.id}")
+                        navController.navigate("MatchDetail/${match.match.id},Matches")
                     })
                 }
             }
             item {
                 Spacer(modifier = Modifier.height(150.dp))
             }
-        }
-    } else {
-        if(done){
-            Box(modifier = Modifier.fillMaxSize()) {
-                Row(modifier = Modifier.align(Alignment.Center)) {
-                    Text(text = "Nothing here yet")
-                }
-            }
         } else {
-            IndeterminateCircularIndicator(label = "Loading past matches")
+            item {
+                if (done) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Row(modifier = Modifier.align(Alignment.Center)) {
+                            Text(text = "Nothing here yet")
+                        }
+                    }
+                } else {
+                    IndeterminateCircularIndicator(label = "Loading past matches")
+                }
+                Spacer(modifier = Modifier.height(50.dp))
+            }
         }
-        Spacer(modifier = Modifier.height(50.dp))
     }
 }
 
@@ -292,7 +351,7 @@ fun MatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -> Unit) 
             defaultElevation = 6.dp
         ),
 
-    ) {
+        ) {
         Box(modifier = Modifier.height(220.dp)) {
             AsyncImage(
                 model = match.club.imageUrl,
@@ -337,25 +396,45 @@ fun MatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -> Unit) 
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val startTime = LocalTime.ofSecondOfDay(match.booking.startTime)
-                    val timeslot = "${startTime} - ${startTime.plusMinutes(match.booking.durationMinutes.toLong())}"
-                    Icon(Icons.Default.DateRange, contentDescription = "Date", tint = Color.White, modifier = Modifier.size(18.dp))
+                    val timeslot =
+                        "${startTime} - ${startTime.plusMinutes(match.booking.durationMinutes.toLong())}"
+                    Icon(
+                        Icons.Default.DateRange,
+                        contentDescription = "Date",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
                     Spacer(modifier = Modifier.width(15.dp))
-                    Text(text = "${formatDateForDisplay(LocalDate.ofEpochDay(match.booking.date))}  $timeslot", style = MaterialTheme.typography.bodyMedium, color = Color.White)
+                    Text(
+                        text = "${formatDateForDisplay(LocalDate.ofEpochDay(match.booking.date))}  $timeslot",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White
+                    )
                 }
                 Spacer(modifier = Modifier.height(5.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.LocationOn, contentDescription = "Location", tint = Color.White, modifier = Modifier.size(18.dp))
+                    Icon(
+                        Icons.Default.LocationOn,
+                        contentDescription = "Location",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
                     Spacer(modifier = Modifier.width(15.dp))
-                    Text(text = "${match.club.name} (${match.club.location.city})", style = MaterialTheme.typography.bodyMedium, color = Color.White)
+                    Text(
+                        text = "${match.club.name} (${match.club.location.city})",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White
+                    )
                 }
 
                 Button(
                     onClick = {
-                        if(isOrganizer){
-                            Toast.makeText(context, "You organized this match", Toast.LENGTH_LONG).show()
+                        if (isOrganizer) {
+                            Toast.makeText(context, "You organized this match", Toast.LENGTH_LONG)
+                                .show()
                         } else {
                             if (isJoined) {
                                 val result = scope.launch {
@@ -365,9 +444,7 @@ fun MatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -> Unit) 
                                     isJoined = false
                                     joinedPlayers -= 1
                                     Toast.makeText(
-                                        context,
-                                        "You left ${match.match.title}",
-                                        Toast.LENGTH_LONG
+                                        context, "You left ${match.match.title}", Toast.LENGTH_LONG
                                     ).show()
                                 } else {
                                     Toast.makeText(context, "Try again later", Toast.LENGTH_LONG)
@@ -395,10 +472,10 @@ fun MatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -> Unit) 
                     modifier = Modifier
                         .align(Alignment.End)
                         .clip(RoundedCornerShape(50)),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)){
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
                     Text(
-                        text = buttonText,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        text = buttonText, color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
@@ -409,10 +486,10 @@ fun MatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -> Unit) 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchBar(state: String, onValueChange: (String) -> Unit) {
-    Box(modifier = Modifier.padding(horizontal = 8.dp)
-    ){
-        TextField(
-            value = state,
+    Box(
+        modifier = Modifier.padding(horizontal = 8.dp)
+    ) {
+        TextField(value = state,
             onValueChange = onValueChange,
             modifier = Modifier
                 .fillMaxWidth()
@@ -426,7 +503,11 @@ fun SearchBar(state: String, onValueChange: (String) -> Unit) {
                 focusedIndicatorColor = Color.Transparent,
                 disabledIndicatorColor = Color.Transparent
             ),
-            placeholder = { Text("Search", color = MaterialTheme.colorScheme.onSecondaryContainer) },
+            placeholder = {
+                Text(
+                    "Search", color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            },
             singleLine = true,
             leadingIcon = {
                 Icon(
@@ -434,7 +515,33 @@ fun SearchBar(state: String, onValueChange: (String) -> Unit) {
                     contentDescription = "Search Icon",
                     tint = MaterialTheme.colorScheme.onSurface
                 )
-            }
-        )
+            })
     }
+}
+
+private fun filterMatches(
+    matches: List<MatchDetailsResponse>,
+    isCompetitive: Boolean,
+    isFriendly: Boolean,
+    isLocation: Boolean,
+    user: User,
+): List<MatchDetailsResponse> {
+    var filteredMatches = matches
+
+    if (isCompetitive) {
+        filteredMatches =
+            filteredMatches.filter { match -> match.match.matchType == MatchTypes.competitive }
+    }
+
+    if (isFriendly) {
+        filteredMatches =
+            filteredMatches.filter { match -> match.match.matchType == MatchTypes.friendly }
+    }
+
+    if (isLocation) {
+        filteredMatches =
+            filteredMatches.filter { match -> match.club.location.city.toLowerCase() == user.preferences.location.name.toLowerCase() }
+    }
+
+    return filteredMatches
 }

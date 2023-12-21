@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -81,7 +82,7 @@ fun ProfileScreen(
     }
 
     var done by remember { mutableStateOf(false) }
-    var isUpcoming by remember { mutableStateOf(false) }
+    var isUpcoming by remember { mutableStateOf(true) }
     var isPrivate by remember { mutableStateOf(false) }
     var isOrganized by remember { mutableStateOf(false) }
     var isCompetitive by remember { mutableStateOf(false) }
@@ -118,8 +119,7 @@ fun ProfileScreen(
     LaunchedEffect(key1 = userData?.userId, key2 = matches) {
         if (userData != null) {
             coroutineScope.launch {
-                val fetchedUser = userRepository.getUserFromFirestore(userData.userId)
-                user = fetchedUser
+                user = userRepository.getUserFromFirestore(userData.userId)
             }
             matches = matchUtils.getJoinedMatchesWithDetailsByUser(userData.userId)
         }
@@ -163,7 +163,6 @@ fun ProfileScreen(
                 ProfileInformation(userData = userData, user = user, navController = navController)
                 Spacer(modifier = Modifier.height(20.dp))
             }
-            if (filteredMatches?.isNotEmpty() == true) {
                 item {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -201,6 +200,7 @@ fun ProfileScreen(
 
                     }
                 }
+            if (filteredMatches?.isNotEmpty() == true) {
                 items(filteredMatches!!) { match ->
                     if (userData != null) {
                         PersonalMatchCard(userData, match, onClick = {
@@ -211,7 +211,7 @@ fun ProfileScreen(
             } else {
                 item {
                     if (done) {
-                        Box(modifier = Modifier.fillMaxSize()) {
+                        Box(modifier = Modifier.fillMaxSize().padding(PaddingValues(top = 50.dp))) {
                             Row(modifier = Modifier.align(Alignment.Center)) {
                                 Text(text = "Nothing here yet")
                             }
