@@ -101,7 +101,7 @@ fun MatchesScreen(userData: UserData?, navController: NavController) {
 
     var isCompetitive by remember { mutableStateOf(false) }
     var isFriendly by remember { mutableStateOf(false) }
-    var isLocation by remember { mutableStateOf(true) }
+    var isLocation by remember { mutableStateOf(false) }
 
     var pastMatches by remember {
         mutableStateOf<List<MatchDetailsResponse>>(emptyList())
@@ -201,8 +201,8 @@ fun MatchesScreen(userData: UserData?, navController: NavController) {
 
                 when (tabTitles[selectedTabIndex]) {
                     "Upcoming" -> UpcomingContent(
-                        userData, upcomingMatches, listState, navController
-                    )
+                            userData, user, upcomingMatches, listState, navController, isCompetitive, isFriendly, isLocation
+                        )
 
                     "History" -> PastContent(userData, pastMatches, listState, navController)
                 }
@@ -239,28 +239,57 @@ fun MatchesScreen(userData: UserData?, navController: NavController) {
 @Composable
 fun UpcomingContent(
     userData: UserData?,
+    user: User?,
     upcomingMatches: List<MatchDetailsResponse>,
     listState: LazyListState,
-    navController: NavController
+    navController: NavController,
+    isCompetitive: Boolean,
+    isFriendly: Boolean,
+    isLocation: Boolean
 ) {
     var done by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = done) {
-        delay(5000)
+        delay(6000)
         done = true
     }
 
+    val filteredMatches = user?.preferences?.location?.let {
+        filterMatches(
+        upcomingMatches,
+        isCompetitive,
+        isFriendly,
+        isLocation,
+        it.name,
+    )
+    }
+
     LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
-        if (upcomingMatches.isNotEmpty()) {
-            items(upcomingMatches) { match ->
-                if (userData != null) {
-                    MatchCard(userData, match, onClick = {
-                        navController.navigate("MatchDetail/${match.match.id},Matches")
-                    })
+        if (filteredMatches != null) {
+            if (filteredMatches.isNotEmpty() && upcomingMatches.isNotEmpty()) {
+                items(filteredMatches) { match ->
+                    if (userData != null) {
+                        MatchCard(userData, match, onClick = {
+                            navController.navigate("MatchDetail/${match.match.id},Matches")
+                        })
+                    }
                 }
-            }
-            item {
-                Spacer(modifier = Modifier.height(150.dp))
+                item {
+                    Spacer(modifier = Modifier.height(150.dp))
+                }
+            } else {
+                item {
+                    if (done) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            Row(modifier = Modifier.align(Alignment.Center)) {
+                                Text(text = "Nothing here yet")
+                            }
+                        }
+                    } else {
+                        IndeterminateCircularIndicator(label = "Loading filters")
+                    }
+                    Spacer(modifier = Modifier.height(50.dp))
+                }
             }
         } else {
             item {
@@ -300,7 +329,7 @@ fun PastContent(
                 if (userData != null) {
                     MatchCard(userData, match, onClick = {
                         navController.navigate("MatchDetail/${match.match.id},Matches")
-                    })
+                    }, false)
                 }
             }
             item {
@@ -325,7 +354,7 @@ fun PastContent(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -> Unit) {
+fun MatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -> Unit, showButton: Boolean = true) {
     val matchUtils = MatchUtils()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -429,54 +458,72 @@ fun MatchCard(user: UserData, match: MatchDetailsResponse, onClick: () -> Unit) 
                         color = Color.White
                     )
                 }
-
-                Button(
-                    onClick = {
-                        if (isOrganizer) {
-                            Toast.makeText(context, "You organized this match", Toast.LENGTH_LONG)
-                                .show()
-                        } else {
-                            if (isJoined) {
-                                val result = scope.launch {
-                                    matchUtils.removePlayerByMatchId(match.match.id, user.userId)
-                                }
-                                if (!result.isCancelled) {
-                                    isJoined = false
-                                    joinedPlayers -= 1
-                                    Toast.makeText(
-                                        context, "You left ${match.match.title}", Toast.LENGTH_LONG
-                                    ).show()
-                                } else {
-                                    Toast.makeText(context, "Try again later", Toast.LENGTH_LONG)
-                                        .show()
-                                }
+                if (showButton) {
+                    Button(
+                        onClick = {
+                            if (isOrganizer) {
+                                Toast.makeText(
+                                    context,
+                                    "You organized this match",
+                                    Toast.LENGTH_LONG
+                                )
+                                    .show()
                             } else {
-                                val result = scope.launch {
-                                    matchUtils.addPlayerByMatchId(match.match.id, user.userId)
-                                }
-                                if (!result.isCancelled) {
-                                    isJoined = true
-                                    joinedPlayers += 1
-                                    Toast.makeText(
-                                        context,
-                                        "You joined ${match.match.title}",
-                                        Toast.LENGTH_LONG
-                                    ).show()
+                                if (isJoined) {
+                                    val result = scope.launch {
+                                        matchUtils.removePlayerByMatchId(
+                                            match.match.id,
+                                            user.userId
+                                        )
+                                    }
+                                    if (!result.isCancelled) {
+                                        isJoined = false
+                                        joinedPlayers -= 1
+                                        Toast.makeText(
+                                            context,
+                                            "You left ${match.match.title}",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "Try again later",
+                                            Toast.LENGTH_LONG
+                                        )
+                                            .show()
+                                    }
                                 } else {
-                                    Toast.makeText(context, "Try again later", Toast.LENGTH_LONG)
-                                        .show()
+                                    val result = scope.launch {
+                                        matchUtils.addPlayerByMatchId(match.match.id, user.userId)
+                                    }
+                                    if (!result.isCancelled) {
+                                        isJoined = true
+                                        joinedPlayers += 1
+                                        Toast.makeText(
+                                            context,
+                                            "You joined ${match.match.title}",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "Try again later",
+                                            Toast.LENGTH_LONG
+                                        )
+                                            .show()
+                                    }
                                 }
                             }
-                        }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .clip(RoundedCornerShape(50)),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) {
-                    Text(
-                        text = buttonText, color = MaterialTheme.colorScheme.onPrimary
-                    )
+                        },
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .clip(RoundedCornerShape(50)),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text(
+                            text = buttonText, color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
             }
         }
@@ -524,7 +571,7 @@ private fun filterMatches(
     isCompetitive: Boolean,
     isFriendly: Boolean,
     isLocation: Boolean,
-    user: User,
+    userLocation: String,
 ): List<MatchDetailsResponse> {
     var filteredMatches = matches
 
@@ -540,7 +587,7 @@ private fun filterMatches(
 
     if (isLocation) {
         filteredMatches =
-            filteredMatches.filter { match -> match.club.location.city.toLowerCase() == user.preferences.location.name.toLowerCase() }
+            filteredMatches.filter { match -> match.club.location.city.toLowerCase() == userLocation.toLowerCase() }
     }
 
     return filteredMatches
