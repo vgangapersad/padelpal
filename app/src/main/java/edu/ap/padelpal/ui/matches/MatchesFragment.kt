@@ -169,6 +169,7 @@ fun MatchesScreen(userData: UserData?, navController: NavController) {
                     }
                 }
                 Spacer(modifier = Modifier.height(10.dp))
+                if (selectedTabIndex == 0) {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.padding(horizontal = 8.dp)
@@ -197,6 +198,7 @@ fun MatchesScreen(userData: UserData?, navController: NavController) {
                     }
 
                 }
+            }
                 Spacer(modifier = Modifier.height(10.dp))
 
                 when (tabTitles[selectedTabIndex]) {
