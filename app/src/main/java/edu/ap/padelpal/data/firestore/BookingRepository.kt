@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import edu.ap.padelpal.models.Booking
-import edu.ap.padelpal.models.Club
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime

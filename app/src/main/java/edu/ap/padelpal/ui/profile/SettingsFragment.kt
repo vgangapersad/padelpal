@@ -1,6 +1,5 @@
 package edu.ap.padelpal.ui.profile
 
-import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -22,14 +21,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import edu.ap.padelpal.R
 import edu.ap.padelpal.data.firestore.UserRepository
 import edu.ap.padelpal.models.CourtPositionPreference
@@ -41,8 +37,6 @@ import edu.ap.padelpal.models.TimePreference
 import edu.ap.padelpal.presentation.sign_in.UserData
 import edu.ap.padelpal.ui.components.IndeterminateCircularIndicator
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import okhttp3.internal.wait
 import java.util.Locale
 
 
@@ -53,9 +47,7 @@ fun SettingsScreen(
     navController: NavController,
     onSignOut: () -> Unit
 ) {
-
     val snackbarHostState = remember { SnackbarHostState() }
-
 
     Scaffold(
         snackbarHost = {
@@ -83,7 +75,7 @@ fun SettingsScreen(
                             contentDescription = "Logout"
                         )
                     }
-                }
+                    }
                 )
         }
     ) { innerPadding ->
@@ -116,8 +108,6 @@ fun SettingsContent(userData: UserData?) {
         }
     }
 
-    var isFocused by remember { mutableStateOf(false) }
-    var expanded by remember { mutableStateOf(false) }
 
     LazyColumn {
         if (selectedPreferences != null) {
@@ -146,8 +136,57 @@ fun SettingsContent(userData: UserData?) {
                         selectedPreferences = selectedPreferences!!.copy(location = newValue)
                     },
                     enumValues = LocationPreference.values(),
+                    icon = Icons.Filled.LocationOn,
+                    )
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                Selection(
+                    label = "Best hand",
+                    selected = selectedPreferences!!.bestHand,
+                    onSelectedChanged = { newValue ->
+                        selectedPreferences = selectedPreferences!!.copy(bestHand = newValue)
+                    },
+                    enumValues = HandPreference.values(),
+                    iconResource = painterResource(id = R.drawable.hand)
                 )
 
+                Spacer(modifier = Modifier.height(15.dp))
+
+                Selection(
+                    label = "Court position",
+                    selected = selectedPreferences!!.courtPosition,
+                    onSelectedChanged = { newValue ->
+                        selectedPreferences = selectedPreferences!!.copy(courtPosition = newValue)
+                    },
+                    enumValues = CourtPositionPreference.values(),
+                    iconResource = painterResource(id = R.drawable.position)
+                )
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                Selection(
+                    label = "Match type",
+                    selected = selectedPreferences!!.matchType,
+                    onSelectedChanged = { newValue ->
+                        selectedPreferences = selectedPreferences!!.copy(matchType = newValue)
+                    },
+                    enumValues = MatchTypePreference.values(),
+                    iconResource = painterResource(id = R.drawable.padel)
+                )
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                Selection(
+                    label = "Preferred time to play",
+                    selected = selectedPreferences!!.preferredTime,
+                    onSelectedChanged = { newValue ->
+                        selectedPreferences = selectedPreferences!!.copy(preferredTime = newValue)
+                    },
+                    enumValues = TimePreference.values(),
+                    iconResource = painterResource(id = R.drawable.sun)
+                )
+                
                 Spacer(modifier = Modifier.height(40.dp))
             }
             item {
@@ -174,7 +213,7 @@ fun SettingsContent(userData: UserData?) {
                         .fillMaxSize(),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Save")
+                    Text("Save changes")
                 }
                 Spacer(modifier = Modifier.height(100.dp))
             }
@@ -276,79 +315,4 @@ fun <T: Enum<T>> Selection(
             }
         }
     }
-
 }
-
-//
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun <T : Enum<T>> Selection(
-//    label: String,
-//    selected: T,
-//    enumValues: Array<T>,
-//    icon: ImageVector?,
-//    iconResource: Painter?,
-//    getName: @Composable (T) -> String
-//){
-//    var isFocused by remember { mutableStateOf(false) }
-//    var expanded by remember { mutableStateOf(false) }
-//    var selectedPreference by remember { mutableStateOf(selected) }
-//
-//    ExposedDropdownMenuBox(
-//        expanded = expanded,
-//        onExpandedChange = { expanded = !expanded },
-//        modifier = Modifier
-//            .border(
-//                1.dp,
-//                if (isFocused) MaterialTheme.colorScheme.primary else Color.Gray,
-//                RoundedCornerShape(4.dp)
-//            )
-//    ) {
-//        TextField(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .menuAnchor()
-//                .onFocusChanged { focusState -> isFocused = focusState.isFocused }
-//                .border(1.dp, Color.Gray, RoundedCornerShape(4.dp)),
-//            readOnly = true,
-//            value = getName(selected),
-//            onValueChange = {},
-//            label = { Text(label) },
-//            trailingIcon = {
-//                if (icon != null) {
-//                    Icon(
-//                        imageVector = icon,
-//                        contentDescription = label,
-//                        tint = MaterialTheme.colorScheme.primary
-//                    )
-//                } else if (iconResource != null) {
-//                    Icon(
-//                        painter = iconResource,
-//                        contentDescription = label,
-//                        tint = MaterialTheme.colorScheme.primary
-//                    )
-//                }
-//            },
-//            colors = TextFieldDefaults.textFieldColors(
-//                containerColor = Color.Transparent,
-//                unfocusedIndicatorColor = Color.Transparent,
-//                focusedIndicatorColor = Color.Transparent
-//            )
-//        )
-//
-//        ExposedDropdownMenu(
-//            expanded = expanded,
-//            onDismissRequest = { expanded = false },
-//        ) {
-//            enumValues.forEach { preference ->
-//                DropdownMenuItem(
-//                    text = { Text(getName(preference)) },
-//                    onClick = {
-//                        selectedPreference = preference
-//                        expanded = false
-//                    }
-//                )
-//            }
-//        }
-//    }
-//}

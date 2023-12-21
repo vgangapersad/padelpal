@@ -1,8 +1,5 @@
 package edu.ap.padelpal.data.firestore
 
-import android.content.Context
-import android.widget.Toast
-import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import edu.ap.padelpal.models.CourtPositionPreference
@@ -12,11 +9,7 @@ import edu.ap.padelpal.models.MatchTypePreference
 import edu.ap.padelpal.models.Preferences
 import edu.ap.padelpal.models.TimePreference
 import edu.ap.padelpal.models.User
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
 
 class UserRepository {
     val db = Firebase.firestore
